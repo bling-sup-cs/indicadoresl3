@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Executivo - Segmentos e Níveis</title>
+    <!-- Bibliotecas carregadas via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+    <script crossorigin src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Biblioteca para exportação de imagem em alta qualidade -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Importação da Fonte Roboto para consistência com a apresentação -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            background-color: #cbd5e1; 
+            margin: 0; 
+        }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        
+        #print-area {
+            backface-visibility: hidden;
+            -webkit-font-smoothing: antialiased;
+            background-color: #f8fafc;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .no-break { white-space: nowrap !important; }
+
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Ajuste fino para Recharts usar Roboto */
+        .recharts-text {
+            font-family: 'Roboto', sans-serif !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- ÍCONES SVG ---
+        const DatabaseIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>);
+        const PlusCircleIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>);
+        const XIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
+        const SaveIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>);
+        const DownloadIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>);
+        const SparklesIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path></svg>);
+
+        // --- COMPONENTES RECHARTS ---
+        const { Tooltip, ResponsiveContainer, ComposedChart, BarChart, LineChart, CartesianGrid, Legend, Bar, Line, YAxis, Cell, XAxis, LabelList, AreaChart, Area } = window.Recharts;
+
+        const BRAND_GREEN = '#34ad61';
+        const ACCENT_NAVY = '#1e293b';
+        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v12';
+        const apiKey = "";
+
+        const INITIAL_DATA = {
+            segmentos: [
+                { id: 'fiscal', name: 'Fiscal', color: BRAND_GREEN, history: [
+                    { month: 'Out', vol: 14629, share: 27.9 }, { month: 'Nov', vol: 11748, share: 29.3 }, { month: 'Dez', vol: 12025, share: 30.3 }, { month: 'Jan', vol: 16652, share: 32.9 }, { month: 'Fev', vol: 12655, share: 29.3 }, { month: 'Mar', vol: 14057, share: 28.2 }, { month: 'Abr', vol: 12871, share: 28.1 }
+                ]},
+                { id: 'integracoes', name: 'Integrações', color: BRAND_GREEN, history: [
+                    { month: 'Out', vol: 13976, share: 26.6 }, { month: 'Nov', vol: 10860, share: 27.1 }, { month: 'Dez', vol: 9348, share: 23.6 }, { month: 'Jan', vol: 11029, share: 21.8 }, { month: 'Fev', vol: 10309, share: 23.9 }, { month: 'Mar', vol: 12233, share: 24.5 }, { month: 'Abr', vol: 11859, share: 25.9 }
+                ]},
+                { id: 'minhaconta', name: 'Minha Conta', color: BRAND_GREEN, history: [
+                    { month: 'Out', vol: 9692, share: 18.5 }, { month: 'Nov', vol: 6907, share: 17.2 }, { month: 'Dez', vol: 7853, share: 19.8 }, { month: 'Jan', vol: 9789, share: 19.3 }, { month: 'Fev', vol: 8378, share: 19.4 }, { month: 'Mar', vol: 11140, share: 22.3 }, { month: 'Abr', vol: 9506, share: 20.7 }
+                ]},
+                { id: 'erp', name: 'ERP', color: BRAND_GREEN, history: [
+                    { month: 'Out', vol: 7454, share: 14.2 }, { month: 'Nov', vol: 5697, share: 14.2 }, { month: 'Dez', vol: 5228, share: 13.2 }, { month: 'Jan', vol: 7511, share: 14.8 }, { month: 'Fev', vol: 6495, share: 15.0 }, { month: 'Mar', vol: 6916, share: 13.9 }, { month: 'Abr', vol: 6004, share: 13.1 }
+                ]},
+                { id: 'financas', name: 'Finanças', color: BRAND_GREEN, history: [
+                    { month: 'Out', vol: 2317, share: 4.4 }, { month: 'Nov', vol: 1508, share: 3.8 }, { month: 'Dez', vol: 1593, share: 4.0 }, { month: 'Jan', vol: 1814, share: 3.6 }, { month: 'Fev', vol: 1628, share: 3.8 }, { month: 'Mar', vol: 1601, share: 3.2 }, { month: 'Abr', vol: 1516, share: 3.3 }
+                ]},
+                { id: 'sistema', name: 'Sistema', color: BRAND_GREEN, history: [
+                    { month: 'Out', vol: 2245, share: 4.3 }, { month: 'Nov', vol: 1300, share: 3.2 }, { month: 'Dez', vol: 2004, share: 5.1 }, { month: 'Jan', vol: 1987, share: 3.9 }, { month: 'Fev', vol: 2037, share: 4.7 }, { month: 'Mar', vol: 1810, share: 3.6 }, { month: 'Abr', vol: 1950, share: 4.3 }
+                ]},
+                { id: 'conta', name: 'Conta Digital', color: BRAND_GREEN, history: [
+                    { month: 'Out', vol: 1366, share: 2.6 }, { month: 'Nov', vol: 1346, share: 3.4 }, { month: 'Dez', vol: 1001, share: 2.5 }, { month: 'Jan', vol: 1227, share: 2.4 }, { month: 'Fev', vol: 1030, share: 2.4 }, { month: 'Mar', vol: 1369, share: 2.7 }, { month: 'Abr', vol: 1351, share: 2.9 }
+                ]},
+                { id: 'api', name: 'API', color: BRAND_GREEN, history: [
+                    { month: 'Out', vol: 773, share: 1.5 }, { month: 'Nov', vol: 688, share: 1.7 }, { month: 'Dez', vol: 628, share: 1.6 }, { month: 'Jan', vol: 656, share: 1.3 }, { month: 'Fev', vol: 642, share: 1.5 }, { month: 'Mar', vol: 730, share: 1.5 }, { month: 'Abr', vol: 763, share: 1.7 }
+                ]}
+            ],
+            niveis: {
+                history: [
+                    { month: 'Out', l1: 89.25, l2: 7.02, l3: 3.35, l4: 0.38 },
+                    { month: 'Nov', l1: 87.97, l2: 7.86, l3: 3.82, l4: 0.35 },
+                    { month: 'Dez', l1: 89.60, l2: 7.36, l3: 2.75, l4: 0.29 },
+                    { month: 'Jan', l1: 88.34, l2: 8.42, l3: 2.77, l4: 0.47 },
+                    { month: 'Fev', l1: 89.57, l2: 6.82, l3: 2.99, l4: 0.62 },
+                    { month: 'Mar', l1: 89.00, l2: 7.43, l3: 3.05, l4: 0.52 },
+                    { month: 'Abr', l1: 89.10, l2: 7.20, l3: 3.20, l4: 0.50 }
+                ]
+            },
+            tipos: {
+                history: [
+                    { month: 'Out', duvida: 89.58, problema: 8.3, sugestao: 2.12 },
+                    { month: 'Nov', duvida: 89.31, problema: 8.19, sugestao: 2.5 },
+                    { month: 'Dez', duvida: 87.96, problema: 10.19, sugestao: 1.84 },
+                    { month: 'Jan', duvida: 91.11, problema: 6.91, sugestao: 1.98 },
+                    { month: 'Fev', duvida: 89.6, problema: 8.09, sugestao: 2.31 },
+                    { month: 'Mar', duvida: 88.15, problema: 9.69, sugestao: 2.16 },
+                    { month: 'Abr', duvida: 90.47, problema: 7.52, sugestao: 2.01 }
+                ]
+            },
+            contaDigital: {
+                history: [
+                    { month: 'Out', clientes: 5692, volume: 1833, contactRate: 32.20 },
+                    { month: 'Nov', clientes: 5751, volume: 1825, contactRate: 31.73 },
+                    { month: 'Dez', clientes: 5624, volume: 1308, contactRate: 23.26 },
+                    { month: 'Jan', clientes: 5697, volume: 1564, contactRate: 27.45 },
+                    { month: 'Fev', clientes: 5731, volume: 1358, contactRate: 23.70 },
+                    { month: 'Mar', clientes: 5731, volume: 1256, contactRate: 21.92 },
+                    { month: 'Abr', clientes: 5870, volume: 1144, contactRate: 19.49 }
+                ]
+            },
+            incidentes: {
+                history: [
+                    { month: 'Out', incidentes: 36, tickets: 4270, representatividade: 5.35, internos: 52.48, externos: 47.52 },
+                    { month: 'Nov', incidentes: 29, tickets: 3047, representatividade: 4.89, internos: 33.11, externos: 66.89 },
+                    { month: 'Dez', incidentes: 24, tickets: 4050, representatividade: 6.95, internos: 46.05, externos: 53.95 },
+                    { month: 'Jan', incidentes: 27, tickets: 2498, representatividade: 3.18, internos: 57.65, externos: 42.35 },
+                    { month: 'Fev', incidentes: 30, tickets: 2020, representatividade: 2.96, internos: 94.01, externos: 5.99 },
+                    { month: 'Mar', incidentes: 32, tickets: 2595, representatividade: 3.28, internos: 85.36, externos: 14.64 },
+                    { month: 'Abr', incidentes: 28, tickets: 2105, representatividade: 3.47, internos: 67.89, externos: 32.11 }
+                ]
+            }
+        };
+
+        const App = () => {
+            const [data, setData] = React.useState(() => {
+                const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (saved) return JSON.parse(saved);
+                return INITIAL_DATA;
+            });
+            const [activeTab, setActiveTab] = React.useState('segmentos_share');
+            const [isEditing, setIsEditing] = React.useState(false);
+            const [isExporting, setIsExporting] = React.useState(false);
+            const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
+            const [aiInsights, setAiInsights] = React.useState("");
+            const [isGeneratingAI, setIsGeneratingAI] = React.useState(false);
+            
+            const [hiddenSegments, setHiddenSegments] = React.useState([]);
+            const [hiddenNiveis, setHiddenNiveis] = React.useState([]);
+            const [hiddenTipos, setHiddenTipos] = React.useState([]);
+            const [hiddenIncidentes, setHiddenIncidentes] = React.useState([]);
+
+            const handleSave = (updatedData) => {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedData));
+                setData(updatedData);
+                setIsEditing(false);
+            };
+
+            const toggleSegmentVisibility = (segId) => {
+                setHiddenSegments(prev => prev.includes(segId) ? prev.filter(id => id !== segId) : [...prev, segId]);
+            };
+
+            const toggleNivelVisibility = (lvlId) => {
+                setHiddenNiveis(prev => prev.includes(lvlId) ? prev.filter(id => id !== lvlId) : [...prev, lvlId]);
+            };
+
+            const toggleTipoVisibility = (typeId) => {
+                setHiddenTipos(prev => prev.includes(typeId) ? prev.filter(id => id !== typeId) : [...prev, typeId]);
+            };
+
+            const toggleIncidenteVisibility = (id) => {
+                setHiddenIncidentes(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+            };
+
+            const callGemini = async (prompt, retries = 5, delay = 1000) => {
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            systemInstruction: { parts: [{ text: "Você é um analista de dados executivo sênior. Sua linguagem é profissional, direta e focada em resultados de negócio. Use Markdown para formatar a resposta com tópicos, negrito e seções claras." }] }
+                        })
+                    });
+                    if (!response.ok) throw new Error('API Error');
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text;
+                } catch (error) {
+                    if (retries > 0) {
+                        await new Promise(res => setTimeout(res, delay));
+                        return callGemini(prompt, retries - 1, delay * 2);
+                    }
+                    throw error;
+                }
+            };
+
+            const handleGenerateAIInsights = async () => {
+                setIsGeneratingAI(true);
+                setIsAIModalOpen(true);
+                setAiInsights("");
+
+                let dataContext = "";
+                let labelType = "";
+                
+                if (activeTab === 'segmentos') {
+                    dataContext = data.segmentos.map(s => `- ${s.name}: ${s.history.map(h => `${h.month}: Vol ${h.vol}, Part ${h.share}%`).join(' | ')}`).join('\n');
+                    labelType = "atendimento por segmento";
+                } else if (activeTab === 'segmentos_share') {
+                    dataContext = data.segmentos.map(s => `- ${s.name}: ${s.history.map(h => `${h.month}: ${h.share}%`).join(' | ')}`).join('\n');
+                    labelType = "comparativo consolidado de Participação (%) entre segmentos";
+                } else if (activeTab === 'niveis') {
+                    dataContext = data.niveis.history.map(h => `- ${h.month}: L1 ${h.l1}%, L2 ${h.l2}%, L3 ${h.l3}%, L4 ${h.l4}%`).join('\n');
+                    labelType = "distribuição por níveis (L1-L4)";
+                } else if (activeTab === 'tipos') {
+                    dataContext = data.tipos.history.map(h => `- ${h.month}: Dúvida ${h.duvida}%, Problema ${h.problema}%, Sugestão ${h.sugestao}%`).join('\n');
+                    labelType = "distribuição por tipos de chamados";
+                } else if (activeTab === 'conta') {
+                    dataContext = data.contaDigital.history.map(h => `- ${h.month}: Clientes ${h.clientes}, Volume ${h.volume}, Contact Rate ${h.contactRate}%`).join('\n');
+                    labelType = "performance da Conta Digital (Contact Rate vs Volume)";
+                } else {
+                    dataContext = data.incidentes.history.map(h => `- ${h.month}: Incidentes ${h.incidentes}, Tickets ${h.tickets}, Repres. ${h.representatividade}%`).join('\n');
+                    labelType = "gestão de incidentes críticos";
+                }
+
+                const prompt = `Analise os seguintes dados de ${labelType} dos últimos 7 meses e gere um relatório executivo em PORTUGUÊS:
+                DADOS:
+                ${dataContext}
+                POR FAVOR FORNEÇA:
+                1. Um resumo executivo focado na eficiência operacional.
+                2. Identificação de tendências.
+                3. Três recomendações estratégicas acionáveis.
+                Formate com Markdown.`;
+
+                try {
+                    const insights = await callGemini(prompt);
+                    setAiInsights(insights);
+                } catch (error) {
+                    setAiInsights("Desculpe, ocorreu um erro ao gerar os insights.");
+                } finally {
+                    setIsGeneratingAI(false);
+                }
+            };
+
+            const handleExportImage = async () => {
+                const element = document.getElementById('print-area');
+                if (!element) return;
+                setIsExporting(true);
+                window.scrollTo(0,0);
+                setTimeout(async () => {
+                    try {
+                        const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: '#f8fafc', width: 1280, height: 720 });
+                        const link = document.createElement('a');
+                        link.download = `dashboard-${activeTab}.png`;
+                        link.href = canvas.toDataURL("image/png", 1.0);
+                        link.click();
+                    } catch (err) {
+                        console.error("Erro ao exportar:", err);
+                    } finally {
+                        setIsExporting(false);
+                    }
+                }, 400);
+            };
+
+            const handleAddMonth = () => {
+                const newData = { ...data };
+                const nextMonthName = window.prompt(`Qual o nome do novo mês? (Abreviação)`, "Mai");
+                if (!nextMonthName) return;
+                newData.segmentos = newData.segmentos.map(seg => ({ ...seg, history: [...seg.history, { month: nextMonthName, vol: 0, share: 0 }] }));
+                newData.niveis.history = [...newData.niveis.history, { month: nextMonthName, l1: 0.1, l2: 0.1, l3: 0.1, l4: 0.1 }];
+                newData.tipos.history = [...newData.tipos.history, { month: nextMonthName, duvida: 1, problema: 1, sugestao: 1 }];
+                newData.contaDigital.history = [...newData.contaDigital.history, { month: nextMonthName, clientes: 0, volume: 0, contactRate: 0 }];
+                newData.incidentes.history = [...newData.incidentes.history, { month: nextMonthName, incidentes: 0, tickets: 0, representatividade: 0, internos: 0, externos: 0 }];
+                setData(newData);
+            };
+
+            const latestMonthName = data.segmentos[0].history[data.segmentos[0].history.length - 1]?.month || "Atual";
+
+            // --- ABA SEGMENTOS ---
+            const renderTabSegmentos = () => (
+                <div className="flex-grow grid grid-cols-4 gap-4 mb-2 overflow-hidden h-full pb-4">
+                    {data.segmentos.map((segment) => {
+                        const history = segment.history;
+                        const currentData = history[history.length - 1] || { vol: 0, share: 0 };
+                        return (
+                        <div key={segment.id} className="bg-white rounded-xl border-2 border-slate-200 p-4 flex flex-col shadow-sm overflow-visible">
+                            <div className="flex justify-between items-start mb-2 shrink-0">
+                                <div><h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500">{segment.name}</h3><div className="text-2xl font-black text-slate-900 mt-1">{currentData.vol.toLocaleString()}</div></div>
+                                <div className="text-right"><span className="text-[10px] text-slate-400 block uppercase font-bold">Participação</span><span className="text-lg font-black" style={{ color: BRAND_GREEN }}>{currentData.share}%</span></div>
+                            </div>
+                            <div className="flex-grow w-full min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <ComposedChart data={history} margin={{ top: 25, right: 5, left: 5, bottom: 5 }}>
+                                        <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b', fontWeight: 700}} dy={8} />
+                                        <YAxis yAxisId="left" hide domain={[0, dataMax => dataMax * 2.3]} />
+                                        <YAxis yAxisId="right" orientation="right" hide domain={[-(data.segmentos[0].history[0].share || 1) * 1.5, dataMax => dataMax * 1.2]} />
+                                        <Bar yAxisId="left" dataKey="vol" radius={[3, 3, 0, 0]} maxBarSize={28}>
+                                            {history.map((entry, index) => <Cell key={`cell-${index}`} fill={index === history.length - 1 ? ACCENT_NAVY : '#cbd5e1'} />)}
+                                            <LabelList dataKey="vol" position="top" formatter={v => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v} style={{ fontSize: '10px', fill: '#334155', fontWeight: 700 }} offset={8} />
+                                        </Bar>
+                                        <Line yAxisId="right" type="monotone" dataKey="share" stroke={BRAND_GREEN} strokeWidth={4} dot={{ r: 4, strokeWidth: 3, fill: 'white', stroke: BRAND_GREEN }}>
+                                            <LabelList dataKey="share" position="top" formatter={v => `${v}%`} style={{ fontSize: '10px', fill: BRAND_GREEN, fontWeight: 700 }} offset={10} />
+                                        </Line>
+                                    </ComposedChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                        );
+                    })}
+                </div>
+            );
+
+            // --- ABA: PARTICIPAÇÃO CONSOLIDADA (REVERTIDA PARA LINEAR COM ESCADINHA) ---
+            const renderTabSegmentosShare = () => {
+                const months = data.segmentos[0].history.map(h => h.month);
+                const chartData = months.map((month, idx) => {
+                    const entry = { month };
+                    data.segmentos.forEach(seg => { entry[seg.id] = seg.history[idx].share; });
+                    return entry;
+                });
+                const colors = { fiscal: '#34ad61', integracoes: '#3b82f6', minhaconta: '#f59e0b', erp: '#ef4444', financas: '#8b5cf6', sistema: '#0ea5e9', conta: '#14b8a6', api: '#f97316' };
+                const sortedSegments = [...data.segmentos].sort((a, b) => b.history[b.history.length-1].share - a.history[a.history.length-1].share);
+                const top4 = sortedSegments.slice(0, 4);
+                const visibleSegments = data.segmentos.filter(seg => !hiddenSegments.includes(seg.id));
+                const yAxisMax = Math.max(Math.ceil(Math.max(...visibleSegments.map(s => Math.max(...s.history.map(h => h.share)))) + 3), 5);
+                const shareTicks = [0, 3, 5, 10, 15, 20, 25, 30, 35].filter(t => t <= yAxisMax);
+
+                return (
+                    <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
+                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                            {top4.map((seg, i) => (
+                                <div key={seg.id} className="flex-1 border-r last:border-0 border-slate-100 py-2.5 text-center">
+                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}>
+                                        <div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Top {i+1}: {seg.name}</div>
+                                        <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase' }}>Média do Período</div>
+                                    </div>
+                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: colors[seg.id] }}>{seg.history[seg.history.length-1].share}%</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white rounded-xl border-2 border-slate-200 flex-grow p-3 shadow-sm overflow-visible flex flex-col min-h-0 mt-1">
+                            <div className="flex-grow w-full min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData} margin={{ top: 45, right: 55, left: 55, bottom: 25 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 13, fill: '#64748b', fontWeight: 700}} dy={15} />
+                                        <YAxis tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b', fontWeight: 600}} domain={[0, yAxisMax]} ticks={shareTicks} />
+                                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 'bold' }} />
+                                        {visibleSegments.map(seg => (
+                                            <Line key={seg.id} type="monotone" dataKey={seg.id} stroke={colors[seg.id]} strokeWidth={4} dot={{ r: 5, fill: 'white', strokeWidth: 3, stroke: colors[seg.id] }} isAnimationActive={false}>
+                                                <LabelList dataKey={seg.id} content={(props) => {
+                                                    const { x, y, value, index } = props;
+                                                    const monthData = visibleSegments.map(s => ({ id: s.id, val: s.history[index].share })).sort((a, b) => b.val - a.val);
+                                                    const isBottomGroup = value < 10;
+                                                    let dx = 0, dy = -16, anchor = "middle";
+
+                                                    if (index === 0) {
+                                                        anchor = "start"; dx = 6;
+                                                        if (isBottomGroup) {
+                                                            const bottomVisible = monthData.filter(s => s.val < 10);
+                                                            const myRank = bottomVisible.findIndex(s => s.id === seg.id);
+                                                            dy = -12 - (myRank * 14);
+                                                        }
+                                                    } else if (index === chartData.length - 1) {
+                                                        anchor = "end"; dx = -6;
+                                                        if (isBottomGroup) {
+                                                            const bottomVisible = monthData.filter(s => s.val < 10);
+                                                            const myRank = bottomVisible.findIndex(s => s.id === seg.id);
+                                                            dy = -12 - (myRank * 14);
+                                                        }
+                                                    } else {
+                                                        if (isBottomGroup) {
+                                                            if (seg.id === 'sistema') { dx = -24; dy = -14; }
+                                                            else if (seg.id === 'financas') { dx = 0; dy = -32; }
+                                                            else if (seg.id === 'conta') { dx = 24; dy = -14; }
+                                                            else if (seg.id === 'api') { dx = 0; dy = -48; }
+                                                            else { dx = 0; dy = -20; }
+                                                        } else {
+                                                            const topVisible = monthData.filter(s => s.val >= 10);
+                                                            const myTopRank = topVisible.findIndex(s => s.id === seg.id);
+                                                            dy = myTopRank % 2 === 0 ? -16 : 16;
+                                                        }
+                                                    }
+                                                    return (<g><text x={x} y={y} dx={dx} dy={dy} fill="none" fontSize="12" fontWeight="900" textAnchor={anchor} stroke="#ffffff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">{value}%</text><text x={x} y={y} dx={dx} dy={dy} fill={colors[seg.id]} fontSize="12" fontWeight="900" textAnchor={anchor}>{value}%</text></g>);
+                                                }} />
+                                            </Line>
+                                        ))}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100">
+                                {data.segmentos.map(seg => (
+                                    <button key={seg.id} onClick={() => toggleSegmentVisibility(seg.id)} className={`mx-3 bg-transparent border-none p-0 transition-all ${hiddenSegments.includes(seg.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`} style={{ display: 'inline-block' }}>
+                                        <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: colors[seg.id], verticalAlign: 'middle', marginRight: '6px' }}></span>
+                                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: hiddenSegments.includes(seg.id) ? '#94a3b8' : '#334155', verticalAlign: 'middle' }}>{seg.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- ABA NÍVEIS (INALTEADA) ---
+            const renderTabNiveis = () => {
+                const levels = [{ id: 'l1', label: 'Nível L1', color: BRAND_GREEN }, { id: 'l2', label: 'Nível L2', color: '#3b82f6' }, { id: 'l3', label: 'Nível L3', color: '#f59e0b' }, { id: 'l4', label: 'Nível L4', color: '#ef4444' }];
+                const history = data.niveis.history;
+                const visibleLevels = levels.filter(lvl => !hiddenNiveis.includes(lvl.id));
+
+                return (
+                    <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
+                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                            {levels.map(level => (
+                                <div key={level.id} className="flex-1 border-r last:border-0 border-slate-100 py-3 text-center">
+                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '16px' }}>
+                                        <div style={{ fontSize: '12px', fontWeight: '900', color: '#64748b' }}>{level.label}</div>
+                                        <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>Média do Período</div>
+                                    </div>
+                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '32px', fontWeight: '900', color: level.color }}>{(history.reduce((a, c) => a + c[level.id], 0) / history.length).toFixed(1)}%</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white rounded-xl border-2 border-slate-200 flex-grow p-3 shadow-sm overflow-visible flex flex-col min-h-0 mt-1">
+                            <div className="flex-grow w-full mt-1 min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={history} margin={{ top: 30, right: 40, left: 10, bottom: 20 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 13, fill: '#64748b', fontWeight: 700}} dy={15} padding={{ left: 30, right: 30 }} />
+                                        <YAxis scale="log" domain={[0.1, dataMax => dataMax * 1.5]} ticks={[0.1, 1, 10, 100]} tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b', fontWeight: 600}} allowDataOverflow />
+                                        {visibleLevels.map(lvl => (
+                                            <Line key={lvl.id} type="monotone" dataKey={lvl.id} stroke={lvl.color} strokeWidth={4} dot={{ r: 5, fill: 'white', strokeWidth: 3, stroke: lvl.color }} activeDot={{ r: 8 }} isAnimationActive={false}>
+                                                <LabelList dataKey={lvl.id} content={(props) => {
+                                                    const { x, y, value, index } = props;
+                                                    let dy = -16, anchor = "middle";
+                                                    if (index === 0) anchor = "start"; else if (index === history.length-1) anchor = "end";
+                                                    else {
+                                                        const isBottomGroup = value < 20; 
+                                                        if (isBottomGroup) {
+                                                            if (lvl.id === 'l2') { dy = -40; }
+                                                            else if (lvl.id === 'l3') { dy = -14; }
+                                                            else if (lvl.id === 'l4') { dy = -14; }
+                                                        }
+                                                    }
+                                                    return (<g><text x={x} y={y} dy={dy} fill="none" fontSize="12" fontWeight="900" textAnchor={anchor} stroke="#ffffff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">{value}%</text><text x={x} y={y} dy={dy} fill={lvl.color} fontSize="12" fontWeight="900" textAnchor={anchor}>{value}%</text></g>);
+                                                }} />
+                                            </Line>
+                                        ))}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100">
+                                {levels.map(lvl => (
+                                    <button key={lvl.id} onClick={() => toggleNivelVisibility(lvl.id)} className={`mx-4 transition-all duration-200 cursor-pointer bg-transparent border-none p-0 ${hiddenNiveis.includes(lvl.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
+                                        <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: lvl.color, verticalAlign: 'middle', marginRight: '8px' }}></span>
+                                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: hiddenNiveis.includes(lvl.id) ? '#94a3b8' : '#334155', verticalAlign: 'middle' }}>{lvl.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- ABA TIPOS ---
+            const renderTabTipos = () => {
+                const types = [{ id: 'duvida', label: 'Dúvidas', color: BRAND_GREEN }, { id: 'problema', label: 'Problemas', color: '#3b82f6' }, { id: 'sugestao', label: 'Sugestões', color: '#f59e0b' }];
+                const history = data.tipos.history;
+                const visibleTypes = types.filter(t => !hiddenTipos.includes(t.id));
+
+                return (
+                    <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
+                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                            {types.map(type => (
+                                <div key={type.id} className="flex-1 border-r last:border-0 border-slate-100 py-3 text-center">
+                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '16px' }}>
+                                        <div style={{ fontSize: '12px', fontWeight: '900', color: '#64748b' }}>{type.label}</div>
+                                        <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>Média do Período</div>
+                                    </div>
+                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '32px', fontWeight: '900', color: type.color }}>{(history.reduce((a, c) => a + c[type.id], 0) / history.length).toFixed(1)}%</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="bg-white rounded-xl border-2 border-slate-200 flex-grow p-3 shadow-sm overflow-visible flex flex-col min-h-0 mt-1">
+                            <div className="flex-grow w-full mt-1 min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={history} margin={{ top: 30, right: 40, left: 10, bottom: 20 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 13, fill: '#64748b', fontWeight: 700}} dy={15} padding={{ left: 30, right: 30 }} />
+                                        <YAxis scale="log" domain={[1, dataMax => dataMax * 1.5]} ticks={[1, 10, 100]} tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b', fontWeight: 600}} allowDataOverflow />
+                                        {visibleTypes.map(type => (
+                                            <Line key={type.id} type="monotone" dataKey={type.id} stroke={type.color} strokeWidth={4} dot={{ r: 5, fill: 'white', strokeWidth: 3, stroke: type.color }} activeDot={{ r: 8 }} isAnimationActive={false}>
+                                                <LabelList dataKey={type.id} content={(props) => {
+                                                    const { x, y, value, index } = props;
+                                                    let dy = -16, anchor = "middle";
+                                                    if (index === 0) anchor = "start"; else if (index === history.length-1) anchor = "end";
+                                                    else {
+                                                        const isBottomGroup = value < 20; 
+                                                        if (isBottomGroup) {
+                                                            if (type.id === 'problema') { dy = -22; }
+                                                            else if (type.id === 'sugestao') { dy = 16; }
+                                                        }
+                                                    }
+                                                    return (<g><text x={x} y={y} dy={dy} fill="none" fontSize="12" fontWeight="900" textAnchor={anchor} stroke="#ffffff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">{value}%</text><text x={x} y={y} dy={dy} fill={type.color} fontSize="12" fontWeight="900" textAnchor={anchor}>{value}%</text></g>);
+                                                }} />
+                                            </Line>
+                                        ))}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100">
+                                {types.map(type => (
+                                    <button key={type.id} onClick={() => toggleTipoVisibility(type.id)} className={`mx-4 transition-all duration-200 cursor-pointer bg-transparent border-none p-0 ${hiddenTipos.includes(type.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
+                                        <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: type.color, verticalAlign: 'middle', marginRight: '8px' }}></span>
+                                        <span style={{ fontSize: '13px', fontWeight: 'bold', color: hiddenTipos.includes(type.id) ? '#94a3b8' : '#334155', verticalAlign: 'middle' }}>{type.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- ABA CONTA DIGITAL ---
+            const renderTabContaDigital = () => {
+                const history = data.contaDigital.history;
+                const current = history[history.length - 1];
+                return (
+                    <div className="flex-grow flex flex-col gap-6 pb-4 min-h-0">
+                        <div className="grid grid-cols-3 gap-6 shrink-0">
+                            <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
+                                <span className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-2">Clientes Ativos ({latestMonthName})</span>
+                                <span className="text-4xl font-black text-slate-800">{current.clientes.toLocaleString('pt-BR')}</span>
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
+                                <span className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-2">Atendimentos ({latestMonthName})</span>
+                                <span className="text-4xl font-black text-slate-800">{current.volume.toLocaleString('pt-BR')}</span>
+                            </div>
+                            <div className="bg-emerald-50 p-6 rounded-2xl border-2 border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm">
+                                <span className="text-emerald-600 font-bold uppercase text-xs tracking-widest mb-2">Taxa de Contato ({latestMonthName})</span>
+                                <span className="text-5xl font-black text-emerald-600">{Number(current.contactRate).toFixed(2).replace('.', ',')}%</span>
+                            </div>
+                        </div>
+                        <div className="flex-grow grid grid-cols-2 gap-6 min-h-0">
+                            <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 flex flex-col shadow-sm overflow-visible">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-2 text-center">Clientes ativos e Atendimentos</h3>
+                                <div className="flex justify-center gap-6 mb-4 text-[10px] font-bold text-slate-500 uppercase">
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-400 rounded-sm"></div> Clientes ativos</div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-sm"></div> Atendimentos</div>
+                                </div>
+                                <div className="flex-grow w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={history} margin={{ top: 25, right: 10, left: 10, bottom: 0 }}><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.25]} /><Bar dataKey="clientes" fill="#94a3b8" radius={[2, 2, 0, 0]} maxBarSize={40}><LabelList dataKey="clientes" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: '#64748b', fontWeight: 700 }} offset={5} /></Bar><Bar dataKey="volume" fill={BRAND_GREEN} radius={[2, 2, 0, 0]} maxBarSize={40}><LabelList dataKey="volume" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: BRAND_GREEN, fontWeight: 700 }} offset={5} /></Bar></BarChart></ResponsiveContainer></div>
+                            </div>
+                            <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 flex flex-col shadow-sm overflow-visible">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-6 text-center mt-2">Taxa de Contato</h3>
+                                <div className="flex-grow w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={history} margin={{ top: 25, right: 25, left: 25, bottom: 0 }}><defs><linearGradient id="colorContact" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={BRAND_GREEN} stopOpacity={0.35}/><stop offset="95%" stopColor={BRAND_GREEN} stopOpacity={0}/></linearGradient></defs><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.3]} /><Area type="monotone" dataKey="contactRate" stroke={BRAND_GREEN} strokeWidth={4} fill="url(#colorContact)" dot={{ r: 5, fill: 'white', stroke: BRAND_GREEN, strokeWidth: 3 }} isAnimationActive={false}><LabelList dataKey="contactRate" position="top" formatter={v => `${Number(v).toFixed(2).replace('.', ',')}%`} style={{ fontSize: '12px', fill: BRAND_GREEN, fontWeight: 900 }} offset={15} /></Area></AreaChart></ResponsiveContainer></div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // --- ABA INCIDENTES ---
+            const renderTabIncidentes = () => {
+                const history = data.incidentes.history;
+                const avgInc = (history.reduce((a, b) => a + b.incidentes, 0) / history.length).toFixed(1);
+                const avgTickets = (history.reduce((a, b) => a + b.tickets, 0) / history.length).toFixed(0);
+                const avgRep = (history.reduce((a, b) => a + b.representatividade, 0) / history.length).toFixed(2);
+                const avgInt = (history.reduce((a, b) => a + b.internos, 0) / history.length).toFixed(2);
+
+                return (
+                    <div className="flex-grow flex flex-col gap-3 pb-0 min-h-0">
+                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                            <div className="flex-1 border-r border-slate-100 py-3 text-center">
+                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>INCIDENTES</div><div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
+                                <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: '#ef4444' }}>{avgInc}</div>
+                            </div>
+                            <div className="flex-1 border-r border-slate-100 py-3 text-center">
+                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>TICKETS VINC.</div><div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
+                                <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: '#94a3b8' }}>{avgTickets}</div>
+                            </div>
+                            <div className="flex-1 border-r border-slate-100 py-3 text-center">
+                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>REPRESENT. %</div><div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
+                                <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: ACCENT_NAVY }}>{avgRep}%</div>
+                            </div>
+                            <div className="flex-1 py-3 text-center">
+                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>INTERNOS %</div><div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
+                                <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: BRAND_GREEN }}>{avgInt}%</div>
+                            </div>
+                        </div>
+
+                        <div className="flex-grow grid grid-cols-2 gap-4 min-h-0">
+                            <div className="bg-white rounded-xl border-2 border-slate-200 p-4 flex flex-col shadow-sm overflow-visible">
+                                <h3 className="text-xs font-black uppercase text-slate-500 mb-4 tracking-tighter">Volume de Incidentes e Impacto na Operação</h3>
+                                <div className="flex-grow">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <ComposedChart data={history} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} />
+                                            <YAxis yAxisId="left" hide domain={[0, 10000]} />
+                                            <YAxis yAxisId="right" orientation="right" hide domain={[-6, 12]} />
+                                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
+                                            <Bar yAxisId="left" dataKey="tickets" name="Tickets Vinculados" fill="#94a3b8" radius={[3, 3, 0, 0]} maxBarSize={35} isAnimationActive={false}><LabelList dataKey="tickets" position="top" style={{ fontSize: '10px', fill: '#64748b', fontWeight: 900 }} offset={5} /></Bar>
+                                            <Bar yAxisId="left" dataKey="incidentes" name="Incidentes Criados" fill="#ef4444" radius={[3, 3, 0, 0]} maxBarSize={35} isAnimationActive={false}><LabelList dataKey="incidentes" position="top" style={{ fontSize: '10px', fill: '#ef4444', fontWeight: 900 }} offset={5} /></Bar>
+                                            <Line yAxisId="right" type="monotone" dataKey="representatividade" name="Representação %" stroke={ACCENT_NAVY} strokeWidth={4} dot={{ r: 5, fill: 'white', stroke: ACCENT_NAVY, strokeWidth: 3 }} isAnimationActive={false}><LabelList dataKey="representatividade" position="top" formatter={v => `${v}%`} style={{ fontSize: '11px', fill: ACCENT_NAVY, fontWeight: 900 }} offset={15} /></Line>
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="flex justify-center gap-6 mt-4 text-[10px] font-bold text-slate-500 uppercase">
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-400 rounded-full"></div> Tickets Vinculados</div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div> Incidentes Criados</div>
+                                    <div className="flex items-center gap-2"><div className="w-6 h-0.5 bg-slate-800"></div> Representatividade (%)</div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl border-2 border-slate-200 p-4 flex flex-col shadow-sm overflow-visible">
+                                <h3 className="text-xs font-black uppercase text-slate-500 mb-4 tracking-tighter">Representação de Incidentes por Origem</h3>
+                                <div className="flex-grow">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={history} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b'}} domain={[0, 110]} hide />
+                                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
+                                            <Bar dataKey="internos" name="Problemas Internos" fill={BRAND_GREEN} radius={[3, 3, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="internos" position="top" formatter={v => `${v}%`} style={{ fontSize: '10px', fill: BRAND_GREEN, fontWeight: 900 }} offset={5} /></Bar>
+                                            <Bar dataKey="externos" name="Problemas Externos" fill="#fca5a5" radius={[3, 3, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="externos" position="top" formatter={v => `${v}%`} style={{ fontSize: '10px', fill: '#f87171', fontWeight: 900 }} offset={5} /></Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="flex justify-center gap-8 mt-4 text-[10px] font-bold text-slate-500 uppercase">
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-full"></div> Problemas Internos (%)</div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-300 rounded-full"></div> Problemas Externos (%)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-slate-300 py-6 text-slate-800">
+                    <div className="w-[1280px] flex gap-2 mb-0 shrink-0 px-4">
+                        {[
+                            { id: 'segmentos', label: 'Segmentos' }, 
+                            { id: 'segmentos_share', label: 'Participação Consolidada' },
+                            { id: 'niveis', label: 'Níveis (L1-L4)' }, 
+                            { id: 'tipos', label: 'Tipos de Atendimento' },
+                            { id: 'conta', label: 'Conta Digital' },
+                            { id: 'incidentes', label: 'Gestão de Incidentes' }
+                        ].map(tab => (
+                            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-5 py-4 rounded-t-2xl font-black text-[11px] uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-[#f8fafc] text-slate-900 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-10 relative border-x-2 border-t-2 border-slate-200' : 'bg-slate-400 text-slate-200 hover:bg-slate-300 hover:text-slate-700'}`}>{tab.label}</button>
+                        ))}
+                    </div>
+
+                    <div className="w-[1280px] flex justify-between items-center mb-4 px-6 shrink-0 bg-[#f8fafc] py-4 rounded-b-2xl rounded-tr-2xl shadow-md z-0 relative -mt-1 border-t-2 border-slate-100">
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-slate-600 font-bold text-xs uppercase tracking-widest">
+                                <span className="bg-slate-200 p-2 rounded-full"><DownloadIcon size={14}/></span>
+                                Captura Roboto 4K (1280x720)
+                            </div>
+                            <button 
+                                onClick={handleGenerateAIInsights}
+                                className="flex items-center gap-2 bg-gradient-to-r from-indigo-700 to-purple-700 hover:from-indigo-800 hover:to-purple-800 text-white px-4 py-2 rounded-lg font-black text-xs shadow-lg transition-all hover:scale-105 active:scale-95 uppercase tracking-tighter"
+                            >
+                                <SparklesIcon size={16} /> ✨ Insight com Gemini IA
+                            </button>
+                        </div>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={handleExportImage}
+                                disabled={isExporting}
+                                className={`flex items-center gap-2 border-2 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest shadow-sm transition-all ${isExporting ? 'bg-slate-100 text-slate-400' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                            >
+                                <DownloadIcon size={16} /> {isExporting ? 'Renderizando...' : 'Exportar para Slide'}
+                            </button>
+                            <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-slate-900 px-6 py-2.5 rounded-xl text-white hover:bg-black font-black text-xs shadow-md transition-colors tracking-widest uppercase"><DatabaseIcon size={16} /> Editar Dados</button>
+                        </div>
+                    </div>
+
+                    <div className="w-[1280px] h-[720px] pt-10 px-12 pb-10 font-sans flex flex-col relative shrink-0 overflow-hidden" id="print-area">
+                        {/* Cabeçalho Padronizado */}
+                        <div className="flex flex-col shrink-0 border-b-2 border-slate-200 mb-4 pb-2">
+                            <h1 className="text-2xl font-black tracking-tighter" style={{ color: BRAND_GREEN }}>
+                                {activeTab === 'segmentos' ? "Atendimentos por Segmentos" : 
+                                 activeTab === 'segmentos_share' ? "Visão Consolidada: Participação de Segmentos" :
+                                 activeTab === 'niveis' ? "Distribuição por Nível de Atendimento" :
+                                 activeTab === 'tipos' ? "Distribuição por Tipos de Atendimento" :
+                                 activeTab === 'conta' ? "Taxa de Contato Conta Digital" :
+                                 "Gestão de Incidentes"}
+                            </h1>
+                            <div className="flex justify-between items-end">
+                                <p className="text-slate-600 font-medium text-sm">
+                                    {activeTab === 'segmentos' ? "Análise de Volume Absoluto (barras) vs. Participação % (linha)" 
+                                    : activeTab === 'segmentos_share' ? "Comparativo da evolução percentual entre todos os segmentos operacionais"
+                                    : activeTab === 'niveis' ? "Comparativo da evolução de volume retido entre as camadas de atendimento (L1 ao L4)"
+                                    : activeTab === 'tipos' ? "Distribuição histórica percentual entre os motivos do contato."
+                                    : activeTab === 'conta' ? "Acompanhamento do Contact Rate e Volume de Clientes Ativos"
+                                    : "Impacto operacional dos incidentes ocorridos no sistema."}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex-grow flex flex-col min-h-0">
+                            {activeTab === 'segmentos' ? renderTabSegmentos() : 
+                             activeTab === 'segmentos_share' ? renderTabSegmentosShare() :
+                             activeTab === 'niveis' ? renderTabNiveis() : 
+                             activeTab === 'tipos' ? renderTabTipos() : 
+                             activeTab === 'conta' ? renderTabContaDigital() :
+                             renderTabIncidentes()}
+                        </div>
+                    </div>
+
+                    {isAIModalOpen && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+                                <div className="p-8 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-purple-100 flex justify-between items-center">
+                                    <div className="flex items-center gap-4"><div className="bg-white p-3 rounded-2xl shadow-sm border border-purple-100 text-indigo-600"><SparklesIcon size={28} /></div><div><h2 className="text-2xl font-black tracking-tight">Análise Estratégica Gemini</h2><p className="text-indigo-600 text-xs font-black uppercase tracking-widest">Relatório Inteligente de Atendimento</p></div></div>
+                                    <button onClick={() => setIsAIModalOpen(false)} className="text-slate-400 hover:text-slate-900 bg-white p-2.5 rounded-full shadow-sm transition-colors border border-slate-100"><XIcon size={24} /></button>
+                                </div>
+                                <div className="flex-grow overflow-y-auto p-10 prose max-w-none prose-slate">
+                                    {isGeneratingAI ? (<div className="h-full flex flex-col items-center justify-center py-16 space-y-6"><div className="w-20 h-20 border-8 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div><p className="text-slate-600 font-black text-lg animate-pulse-subtle uppercase tracking-tighter">Processando inteligência de dados...</p></div>) : (<div className="text-slate-800 leading-relaxed font-medium text-lg" dangerouslySetInnerHTML={{ __html: aiInsights.replace(/\n/g, '<br/>').replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-indigo-900">$1</strong>').replace(/### (.*?)\n/g, '<h3 class="text-xl font-black mt-8 mb-4 text-indigo-800 uppercase tracking-tight border-b-2 border-indigo-50 pb-2">$1</h3>').replace(/- (.*?)\n/g, '<li class="ml-6 mb-3">$1</li>') }} />)}
+                                </div>
+                                <div className="p-8 border-t border-slate-100 bg-slate-50 flex justify-end"><button onClick={() => setIsAIModalOpen(false)} className="px-12 py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg active:scale-95 uppercase tracking-widest text-xs">Retornar ao Dashboard</button></div>
+                            </div>
+                        </div>
+                    )}
+
+                    {isEditing && (
+                        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl"><div className="flex items-center gap-3 text-slate-800"><DatabaseIcon size={24} color={BRAND_GREEN} /><h2 className="text-xl font-bold font-black uppercase">Editor ({latestMonthName})</h2></div><div className="flex gap-3"><button onClick={handleAddMonth} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-black transition-colors uppercase"><PlusCircleIcon size={16} /> Novo Mês</button><button onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full border border-slate-200"><XIcon size={20} /></button></div></div>
+                                <div className="flex-grow overflow-y-auto p-6 bg-white">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {data.segmentos.map((seg, sIdx) => {
+                                            const lastIdx = seg.history.length - 1;
+                                            return (
+                                                <div key={seg.id} className="p-4 bg-slate-50 rounded-xl border-2 border-slate-200 hover:border-indigo-200 transition-colors">
+                                                    <h4 className="font-black text-slate-700 mb-3 text-sm uppercase">{seg.name}</h4>
+                                                    <div className="space-y-3 text-slate-800">
+                                                        <div><label className="block text-[10px] uppercase font-black text-slate-500 mb-1">Volume</label><input type="number" value={seg.history[lastIdx]?.vol} onChange={(e) => { const newData = {...data}; newData.segmentos[sIdx].history[lastIdx].vol = parseInt(e.target.value) || 0; setData(newData); }} className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:border-indigo-500 outline-none font-bold text-slate-800" /></div>
+                                                        <div><label className="block text-[10px] uppercase font-black text-slate-500 mb-1">Participação %</label><input type="number" step="0.1" value={seg.history[lastIdx]?.share} onChange={(e) => { const newData = {...data}; newData.segmentos[sIdx].history[lastIdx].share = parseFloat(e.target.value) || 0; setData(newData); }} className="w-full px-3 py-2 border-2 border-slate-300 rounded-lg focus:ring-2 focus:border-indigo-500 outline-none font-bold text-slate-800" /></div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                                <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl"><button onClick={() => setIsEditing(false)} className="px-8 py-2.5 rounded-lg text-slate-600 font-bold hover:bg-slate-200 uppercase text-xs">Cancelar</button><button onClick={() => handleSave(data)} className="px-10 py-2.5 text-white rounded-lg font-black shadow-lg flex items-center gap-2 uppercase text-xs transition-all" style={{ backgroundColor: BRAND_GREEN }}><SaveIcon size={18} /> Salvar Tudo</button></div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
