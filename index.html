@@ -28,6 +28,8 @@
             -webkit-font-smoothing: antialiased;
             background-color: #f8fafc;
             font-family: 'Roboto', sans-serif;
+            width: 1280px;
+            height: 720px;
         }
 
         .no-break { white-space: nowrap !important; }
@@ -142,7 +144,12 @@
         const App = () => {
             const [data, setData] = React.useState(() => {
                 const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (saved) return JSON.parse(saved);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    // Sobrescreve os dados de níveis com os novos valores para garantir atualização mesmo em browsers com cache de localStorage
+                    parsed.niveis = INITIAL_DATA.niveis;
+                    return parsed;
+                }
                 return INITIAL_DATA;
             });
             const [activeTab, setActiveTab] = React.useState('segmentos_share');
@@ -490,7 +497,7 @@
                             <div className="flex-grow w-full mt-1 min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={history} margin={{ top: 30, right: 40, left: 10, bottom: 20 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f15f9" stroke="#f1f5f9" />
                                         <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 13, fill: '#64748b', fontWeight: 700}} dy={15} padding={{ left: 30, right: 30 }} />
                                         <YAxis scale="log" domain={[1, dataMax => dataMax * 1.5]} ticks={[1, 10, 100]} tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b', fontWeight: 600}} allowDataOverflow />
                                         {visibleTypes.map(type => (
@@ -588,7 +595,7 @@
                                 <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: ACCENT_NAVY }}>{avgRep}%</div>
                             </div>
                             <div className="flex-1 py-3 text-center">
-                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>INTERNOS %</div><div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
+                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>INTERNOS %</div><div style={{ fontSize: '9px', fontBold: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
                                 <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: BRAND_GREEN }}>{avgInt}%</div>
                             </div>
                         </div>
@@ -683,7 +690,7 @@
 
                     <div className="w-[1280px] h-[720px] pt-10 px-12 pb-10 font-sans flex flex-col relative shrink-0 overflow-hidden" id="print-area">
                         {/* Cabeçalho Padronizado */}
-                        <div className="flex flex-col shrink-0 border-b-2 border-slate-200 mb-4 pb-2">
+                        <div className="flex flex-col shrink-0 border-b-2 border-slate-200 mb-4 pb-2 text-left">
                             <h1 className="text-2xl font-black tracking-tighter" style={{ color: BRAND_GREEN }}>
                                 {activeTab === 'segmentos' ? "Atendimentos por Segmentos" : 
                                  activeTab === 'segmentos_share' ? "Visão Consolidada: Participação de Segmentos" :
