@@ -73,7 +73,7 @@
 
         const BRAND_GREEN = '#34ad61';
         const ACCENT_NAVY = '#1e293b';
-        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v17'; // Atualizado para nova escala Sqrt
+        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v18'; // Atualizado para nova separação do modal
         const apiKey = "";
 
         const INITIAL_DATA = {
@@ -893,8 +893,26 @@
                     {isEditing && (
                         <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl"><div className="flex items-center gap-3 text-slate-800"><DatabaseIcon size={24} color={BRAND_GREEN} /><h2 className="text-xl font-bold font-black uppercase">Editor ({latestMonthName})</h2></div><div className="flex gap-3"><button onClick={handleAddMonth} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-black transition-colors uppercase"><PlusCircleIcon size={16} /> Novo Mês</button><button onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full border border-slate-200"><XIcon size={20} /></button></div></div>
+                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                                    <div className="flex items-center gap-3 text-slate-800">
+                                        <DatabaseIcon size={24} color={BRAND_GREEN} />
+                                        <h2 className="text-xl font-bold font-black uppercase">Editor - {
+                                            activeTab === 'segmentos' || activeTab === 'segmentos_share' ? 'Segmentos' :
+                                            activeTab === 'niveis' ? 'Níveis de Atendimento' :
+                                            activeTab === 'tipos' ? 'Tipos de Atendimento' :
+                                            activeTab === 'conta' ? 'Conta Digital' :
+                                            activeTab === 'incidentes' ? 'Gestão de Incidentes' :
+                                            'Principais Incidentes'
+                                        } ({latestMonthName})</h2>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={handleAddMonth} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-black transition-colors uppercase"><PlusCircleIcon size={16} /> Novo Mês</button>
+                                        <button onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full border border-slate-200"><XIcon size={20} /></button>
+                                    </div>
+                                </div>
                                 <div className="flex-grow overflow-y-auto p-6 bg-white">
+                                    
+                                    {/* Editor para Segmentos e Share */}
                                     {activeTab === 'segmentos' || activeTab === 'segmentos_share' ? (
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                             {data.segmentos.map((seg, sIdx) => {
@@ -910,8 +928,138 @@
                                                 );
                                             })}
                                         </div>
-                                    ) : activeTab === 'principais_incidentes' ? (
-                                        <div className="grid grid-cols-1 gap-4 max-w-4xl mx-auto">
+                                    ) 
+                                    
+                                    /* Editor para Níveis (L1-L4) */
+                                    : activeTab === 'niveis' ? (() => {
+                                        const lastNiveisIdx = data.niveis.history.length - 1;
+                                        return (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+                                                {['l1', 'l2', 'l3', 'l4'].map(levelKey => (
+                                                    <div key={levelKey} className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
+                                                        <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase">Nível {levelKey.toUpperCase()}</h4>
+                                                        <div>
+                                                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Share (%)</label>
+                                                            <input type="number" step="0.01" value={data.niveis.history[lastNiveisIdx]?.[levelKey]} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                newData.niveis.history[lastNiveisIdx][levelKey] = parseFloat(e.target.value) || 0;
+                                                                setData(newData);
+                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })()
+
+                                    /* Editor para Tipos de Atendimento */
+                                    : activeTab === 'tipos' ? (() => {
+                                        const lastTiposIdx = data.tipos.history.length - 1;
+                                        const typesConfig = [{id: 'duvida', label: 'Dúvidas'}, {id: 'problema', label: 'Problemas'}, {id: 'sugestao', label: 'Sugestões'}];
+                                        return (
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                                                {typesConfig.map(type => (
+                                                    <div key={type.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
+                                                        <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase">{type.label}</h4>
+                                                        <div>
+                                                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Share (%)</label>
+                                                            <input type="number" step="0.01" value={data.tipos.history[lastTiposIdx]?.[type.id]} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                newData.tipos.history[lastTiposIdx][type.id] = parseFloat(e.target.value) || 0;
+                                                                setData(newData);
+                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })()
+
+                                    /* Editor para Conta Digital */
+                                    : activeTab === 'conta' ? (() => {
+                                        const lastContaIdx = data.contaDigital.history.length - 1;
+                                        return (
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Clientes Ativos</label>
+                                                    <input type="number" value={data.contaDigital.history[lastContaIdx]?.clientes} onChange={(e) => {
+                                                        const newData = {...data};
+                                                        newData.contaDigital.history[lastContaIdx].clientes = parseInt(e.target.value) || 0;
+                                                        setData(newData);
+                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
+                                                </div>
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Volume de Atendimentos</label>
+                                                    <input type="number" value={data.contaDigital.history[lastContaIdx]?.volume} onChange={(e) => {
+                                                        const newData = {...data};
+                                                        newData.contaDigital.history[lastContaIdx].volume = parseInt(e.target.value) || 0;
+                                                        setData(newData);
+                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
+                                                </div>
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Taxa de Contato (%)</label>
+                                                    <input type="number" step="0.01" value={data.contaDigital.history[lastContaIdx]?.contactRate} onChange={(e) => {
+                                                        const newData = {...data};
+                                                        newData.contaDigital.history[lastContaIdx].contactRate = parseFloat(e.target.value) || 0;
+                                                        setData(newData);
+                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
+                                                </div>
+                                            </div>
+                                        );
+                                    })()
+
+                                    /* Editor para Gestão de Incidentes */
+                                    : activeTab === 'incidentes' ? (() => {
+                                        const lastIncIdx = data.incidentes.history.length - 1;
+                                        return (
+                                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 max-w-5xl mx-auto">
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Incidentes</label>
+                                                    <input type="number" value={data.incidentes.history[lastIncIdx]?.incidentes} onChange={(e) => {
+                                                        const newData = {...data};
+                                                        newData.incidentes.history[lastIncIdx].incidentes = parseInt(e.target.value) || 0;
+                                                        setData(newData);
+                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
+                                                </div>
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Tickets Vinc.</label>
+                                                    <input type="number" value={data.incidentes.history[lastIncIdx]?.tickets} onChange={(e) => {
+                                                        const newData = {...data};
+                                                        newData.incidentes.history[lastIncIdx].tickets = parseInt(e.target.value) || 0;
+                                                        setData(newData);
+                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
+                                                </div>
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Represent. (%)</label>
+                                                    <input type="number" step="0.01" value={data.incidentes.history[lastIncIdx]?.representatividade} onChange={(e) => {
+                                                        const newData = {...data};
+                                                        newData.incidentes.history[lastIncIdx].representatividade = parseFloat(e.target.value) || 0;
+                                                        setData(newData);
+                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
+                                                </div>
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Internos (%)</label>
+                                                    <input type="number" step="0.01" value={data.incidentes.history[lastIncIdx]?.internos} onChange={(e) => {
+                                                        const newData = {...data};
+                                                        newData.incidentes.history[lastIncIdx].internos = parseFloat(e.target.value) || 0;
+                                                        setData(newData);
+                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
+                                                </div>
+                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Externos (%)</label>
+                                                    <input type="number" step="0.01" value={data.incidentes.history[lastIncIdx]?.externos} onChange={(e) => {
+                                                        const newData = {...data};
+                                                        newData.incidentes.history[lastIncIdx].externos = parseFloat(e.target.value) || 0;
+                                                        setData(newData);
+                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
+                                                </div>
+                                            </div>
+                                        );
+                                    })()
+
+                                    /* Editor para Principais Incidentes (Mantido Inalterado) */
+                                    : activeTab === 'principais_incidentes' ? (
+                                        <div className="grid grid-cols-1 gap-4 max-w-5xl mx-auto">
                                             {data.principaisIncidentes.history.map((item, idx) => (
                                                 <div key={item.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center text-slate-800 font-bold">
                                                     <div className="col-span-4">
@@ -923,7 +1071,7 @@
                                                         }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
                                                     </div>
                                                     <div className="col-span-2">
-                                                        <div className="w-full text-xs font-bold bg-slate-200 p-2 rounded">{item.category}</div>
+                                                        <div className="w-full text-xs font-bold bg-slate-200 p-2 rounded truncate">{item.category}</div>
                                                     </div>
                                                     <div className="col-span-1">
                                                         <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Tickets</label>
@@ -964,11 +1112,7 @@
                                                 </div>
                                             ))}
                                         </div>
-                                    ) : (
-                                        <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 max-w-xl mx-auto space-y-4 text-slate-800 font-bold">
-                                            <p className="text-center font-bold text-slate-400">Edição simplificada. Use o gerenciador da aba de Segmentos ou Principais Incidentes.</p>
-                                        </div>
-                                    )}
+                                    ) : null}
                                 </div>
                                 <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl"><button onClick={() => setIsEditing(false)} className="px-8 py-2.5 rounded-lg text-slate-600 font-bold hover:bg-slate-200 uppercase text-xs">Cancelar</button><button onClick={() => handleSave(data)} className="px-10 py-2.5 text-white rounded-lg font-black shadow-lg flex items-center gap-2 uppercase text-xs transition-all" style={{ backgroundColor: BRAND_GREEN }}><SaveIcon size={18} /> Salvar Tudo</button></div>
                             </div>
