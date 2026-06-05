@@ -46,6 +46,14 @@
         .recharts-text {
             font-family: 'Roboto', sans-serif !important;
         }
+        
+        /* Estilo para travar o alinhamento dos números nos cards da exportação */
+        .card-number-box {
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 <body>
@@ -65,7 +73,7 @@
 
         const BRAND_GREEN = '#34ad61';
         const ACCENT_NAVY = '#1e293b';
-        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v14'; // Versão incrementada para recarregar o novo banco de dados no browser
+        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v17'; // Atualizado para nova escala Sqrt
         const apiKey = "";
 
         const INITIAL_DATA = {
@@ -73,25 +81,25 @@
                 { id: 'fiscal', name: 'Fiscal', color: BRAND_GREEN, history: [
                     { month: 'Out', vol: 14629, share: 27.9 }, { month: 'Nov', vol: 11748, share: 29.3 }, { month: 'Dez', vol: 12025, share: 30.3 }, { month: 'Jan', vol: 16652, share: 32.9 }, { month: 'Fev', vol: 12655, share: 29.3 }, { month: 'Mar', vol: 14057, share: 28.2 }, { month: 'Abr', vol: 12871, share: 28.1 }
                 ]},
-                { id: 'integracoes', name: 'Integrações', color: BRAND_GREEN, history: [
+                { id: 'integracoes', name: 'Integrações', color: '#3b82f6', history: [
                     { month: 'Out', vol: 13976, share: 26.6 }, { month: 'Nov', vol: 10860, share: 27.1 }, { month: 'Dez', vol: 9348, share: 23.6 }, { month: 'Jan', vol: 11029, share: 21.8 }, { month: 'Fev', vol: 10309, share: 23.9 }, { month: 'Mar', vol: 12233, share: 24.5 }, { month: 'Abr', vol: 11859, share: 25.9 }
                 ]},
-                { id: 'minhaconta', name: 'Minha Conta', color: BRAND_GREEN, history: [
+                { id: 'minhaconta', name: 'Minha Conta', color: '#f59e0b', history: [
                     { month: 'Out', vol: 9692, share: 18.5 }, { month: 'Nov', vol: 6907, share: 17.2 }, { month: 'Dez', vol: 7853, share: 19.8 }, { month: 'Jan', vol: 9789, share: 19.3 }, { month: 'Fev', vol: 8378, share: 19.4 }, { month: 'Mar', vol: 11140, share: 22.3 }, { month: 'Abr', vol: 9506, share: 20.7 }
                 ]},
-                { id: 'erp', name: 'ERP', color: BRAND_GREEN, history: [
+                { id: 'erp', name: 'ERP', color: '#ef4444', history: [
                     { month: 'Out', vol: 7454, share: 14.2 }, { month: 'Nov', vol: 5697, share: 14.2 }, { month: 'Dez', vol: 5228, share: 13.2 }, { month: 'Jan', vol: 7511, share: 14.8 }, { month: 'Fev', vol: 6495, share: 15.0 }, { month: 'Mar', vol: 6916, share: 13.9 }, { month: 'Abr', vol: 6004, share: 13.1 }
                 ]},
-                { id: 'financas', name: 'Finanças', color: BRAND_GREEN, history: [
+                { id: 'financas', name: 'Finanças', color: '#8b5cf6', history: [
                     { month: 'Out', vol: 2317, share: 4.4 }, { month: 'Nov', vol: 1508, share: 3.8 }, { month: 'Dez', vol: 1593, share: 4.0 }, { month: 'Jan', vol: 1814, share: 3.6 }, { month: 'Fev', vol: 1628, share: 3.8 }, { month: 'Mar', vol: 1601, share: 3.2 }, { month: 'Abr', vol: 1516, share: 3.3 }
                 ]},
-                { id: 'sistema', name: 'Sistema', color: BRAND_GREEN, history: [
+                { id: 'sistema', name: 'Sistema', color: '#0ea5e9', history: [
                     { month: 'Out', vol: 2245, share: 4.3 }, { month: 'Nov', vol: 1300, share: 3.2 }, { month: 'Dez', vol: 2004, share: 5.1 }, { month: 'Jan', vol: 1987, share: 3.9 }, { month: 'Fev', vol: 2037, share: 4.7 }, { month: 'Mar', vol: 1810, share: 3.6 }, { month: 'Abr', vol: 1950, share: 4.3 }
                 ]},
-                { id: 'conta', name: 'Conta Digital', color: BRAND_GREEN, history: [
+                { id: 'conta', name: 'Conta Digital', color: '#14b8a6', history: [
                     { month: 'Out', vol: 1366, share: 2.6 }, { month: 'Nov', vol: 1346, share: 3.4 }, { month: 'Dez', vol: 1001, share: 2.5 }, { month: 'Jan', vol: 1227, share: 2.4 }, { month: 'Fev', vol: 1030, share: 2.4 }, { month: 'Mar', vol: 1369, share: 2.7 }, { month: 'Abr', vol: 1351, share: 2.9 }
                 ]},
-                { id: 'api', name: 'API', color: BRAND_GREEN, history: [
+                { id: 'api', name: 'API', color: '#f97316', history: [
                     { month: 'Out', vol: 773, share: 1.5 }, { month: 'Nov', vol: 688, share: 1.7 }, { month: 'Dez', vol: 628, share: 1.6 }, { month: 'Jan', vol: 656, share: 1.3 }, { month: 'Fev', vol: 642, share: 1.5 }, { month: 'Mar', vol: 730, share: 1.5 }, { month: 'Abr', vol: 763, share: 1.7 }
                 ]}
             ],
@@ -141,16 +149,11 @@
             },
             principaisIncidentes: {
                 history: [
-                    { id: 1, incident: 'Dificuldade na importação de pedidos do Mercado Livre - Taxa de marketplace em branco', category: 'Integrações', chat: 43, ticket: 307, duration: '8h 30m', impact: 'Alto', status: 'Resolvido' },
-                    { id: 2, incident: 'Comunicação via pop-up indevida sobre boleto vencido', category: 'Minha Conta', chat: 2, ticket: 151, duration: '4h 15m', impact: 'Médio', status: 'Resolvido' },
-                    { id: 3, incident: 'Instabilidade Sefaz SP', category: 'Fiscal', chat: 0, ticket: 87, duration: '24h 00m', impact: 'Alto', status: 'Resolvido' },
-                    { id: 4, incident: 'Dificuldade no pagamento de boletos pela Bling Conta Digital', category: 'Conta Digital', chat: 2, ticket: 54, duration: '34d 00m', impact: 'Médio', status: 'Resolvido' },
-                    { id: 5, incident: '928 - Rejeição: Informado código de benefício fiscal para CST sem benefício fiscal', category: 'Fiscal', chat: 10, ticket: 27, duration: '2h 10m', impact: 'Médio', status: 'Resolvido' },
-                    { id: 6, incident: 'Dificuldade em geração do QrCode Pix', category: 'Certificado Digital', chat: 3, ticket: 35, duration: '6h 30m', impact: 'Médio', status: 'Resolvido' },
-                    { id: 7, incident: 'Dashboard Meu negócio não está carregando corretamente', category: 'Meu Negócio', chat: 4, ticket: 23, duration: '1h 15m', impact: 'Baixo', status: 'Resolvido' },
-                    { id: 8, incident: 'Transferência entre contas não sendo exibidas', category: 'Finanças', chat: 2, ticket: 11, duration: '12h 00m', impact: 'Baixo', status: 'Resolvido' },
-                    { id: 9, incident: 'Erro na geração de relatórios financeiros com o portador Bling Conta', category: 'Finanças', chat: 2, ticket: 4, duration: '3h 00m', impact: 'Baixo', status: 'Resolvido' },
-                    { id: 10, incident: 'Instabilidade nas funcionalidades pix', category: 'Conta Digital', chat: 0, ticket: 1, duration: '30m', impact: 'Baixo', status: 'Resolvido' }
+                    { id: 1, incident: 'Instabilidade de Resposta Sefaz (Emissão NF-e)', category: 'Fiscal', tickets: 820, duration: '2h 15m', impact: 'Alto', status: 'Resolvido' },
+                    { id: 2, incident: 'Lentidão nas APIs de Gateway de Pagamento', category: 'API', tickets: 610, duration: '1h 45m', impact: 'Alto', status: 'Resolvido' },
+                    { id: 3, incident: 'Falha de Sincronização de Estoque ERP', category: 'ERP', tickets: 380, duration: '4h 10m', impact: 'Médio', status: 'Resolvido' },
+                    { id: 4, incident: 'Atraso no Processamento de Arquivos CNAB', category: 'Conta Digital', tickets: 185, duration: '6h 30m', impact: 'Baixo', status: 'Resolvido' },
+                    { id: 5, incident: 'Erro ao Carregar Relatórios do Painel', category: 'Minha Conta', tickets: 110, duration: '1h 15m', impact: 'Baixo', status: 'Resolvido' }
                 ]
             }
         };
@@ -161,7 +164,7 @@
                 if (saved) return JSON.parse(saved);
                 return INITIAL_DATA;
             });
-            const [activeTab, setActiveTab] = React.useState('principais_incidentes');
+            const [activeTab, setActiveTab] = React.useState('segmentos_share');
             const [isEditing, setIsEditing] = React.useState(false);
             const [isExporting, setIsExporting] = React.useState(false);
             const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
@@ -291,17 +294,22 @@
                 const newData = { ...data };
                 const nextMonthName = window.prompt(`Qual o nome do novo mês? (Abreviação)`, "Mai");
                 if (!nextMonthName) return;
-                newData.segmentos = newData.segmentos.map(seg => ({ ...seg, history: [...seg.history, { month: nextMonthName, vol: 0, share: 0 }] }));
-                newData.niveis.history = [...newData.niveis.history, { month: nextMonthName, l1: 0.1, l2: 0.1, l3: 0.1, l4: 0.1 }];
-                newData.tipos.history = [...newData.tipos.history, { month: nextMonthName, duvida: 1, problema: 1, sugestao: 1 }];
-                newData.contaDigital.history = [...newData.contaDigital.history, { month: nextMonthName, clientes: 0, volume: 0, contactRate: 0 }];
-                newData.incidentes.history = [...newData.incidentes.history, { month: nextMonthName, incidentes: 0, tickets: 0, representatividade: 0, internos: 0, externos: 0 }];
+                
+                // Adiciona o novo mês e mantém apenas os últimos 7 meses usando slice(-7)
+                newData.segmentos = newData.segmentos.map(seg => ({ 
+                    ...seg, 
+                    history: [...seg.history, { month: nextMonthName, vol: 0, share: 0 }].slice(-7) 
+                }));
+                newData.niveis.history = [...newData.niveis.history, { month: nextMonthName, l1: 0.1, l2: 0.1, l3: 0.1, l4: 0.1 }].slice(-7);
+                newData.tipos.history = [...newData.tipos.history, { month: nextMonthName, duvida: 1, problema: 1, sugestao: 1 }].slice(-7);
+                newData.contaDigital.history = [...newData.contaDigital.history, { month: nextMonthName, clientes: 0, volume: 0, contactRate: 0 }].slice(-7);
+                newData.incidentes.history = [...newData.incidentes.history, { month: nextMonthName, incidentes: 0, tickets: 0, representatividade: 0, internos: 0, externos: 0 }].slice(-7);
+                
                 setData(newData);
             };
 
             const latestMonthName = data.segmentos[0].history[data.segmentos[0].history.length - 1]?.month || "Atual";
 
-            // Lógica para traduzir a abreviação do mês atual para o nome completo correspondente
             const getFullMonthName = (shortMonth) => {
                 const monthMap = { 
                     'Jan': 'Janeiro', 'Fev': 'Fevereiro', 'Mar': 'Março', 
@@ -348,7 +356,7 @@
                 </div>
             );
 
-            // --- ABA: PARTICIPAÇÃO CONSOLIDADA (LINEAR COM ESCADINHA) ---
+            // --- ABA: PARTICIPAÇÃO CONSOLIDADA (ESCALA RAIZ QUADRADA COM MOTOR ANTI-COLISÃO) ---
             const renderTabSegmentosShare = () => {
                 const months = data.segmentos[0].history.map(h => h.month);
                 const chartData = months.map((month, idx) => {
@@ -356,80 +364,77 @@
                     data.segmentos.forEach(seg => { entry[seg.id] = seg.history[idx].share; });
                     return entry;
                 });
+                
                 const colors = { fiscal: '#34ad61', integracoes: '#3b82f6', minhaconta: '#f59e0b', erp: '#ef4444', financas: '#8b5cf6', sistema: '#0ea5e9', conta: '#14b8a6', api: '#f97316' };
                 const sortedSegments = [...data.segmentos].sort((a, b) => b.history[b.history.length-1].share - a.history[a.history.length-1].share);
                 const top4 = sortedSegments.slice(0, 4);
                 const visibleSegments = data.segmentos.filter(seg => !hiddenSegments.includes(seg.id));
-                const yAxisMax = Math.max(Math.ceil(Math.max(...visibleSegments.map(s => Math.max(...s.history.map(h => h.share)))) + 3), 5);
-                const shareTicks = [0, 3, 5, 10, 15, 20, 25, 30, 35].filter(t => t <= yAxisMax);
+                
+                const shareTicks = [0, 2, 5, 10, 20, 30, 40];
 
                 return (
                     <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
                         <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
                             {top4.map((seg, i) => (
-                                <div key={seg.id} className="flex-1 border-r last:border-0 border-slate-100 py-2.5 text-center">
+                                <div key={seg.id} className="flex-1 border-r last:border-0 border-slate-100 py-2.5 text-center no-break">
                                     <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}>
-                                        <div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase' }}>Top {i+1}: {seg.name}</div>
-                                        <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase' }}>Média do Período</div>
+                                        <div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', lineHeight: '1' }}>Top {i+1}: {seg.name}</div>
+                                        <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Média do Período</div>
                                     </div>
-                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: colors[seg.id] }}>{seg.history[seg.history.length-1].share}%</div>
+                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: colors[seg.id], lineHeight: '1' }}>{seg.history[seg.history.length-1].share}%</div>
                                 </div>
                             ))}
                         </div>
                         <div className="bg-white rounded-xl border-2 border-slate-200 flex-grow p-3 shadow-sm overflow-visible flex flex-col min-h-0 mt-1">
                             <div className="flex-grow w-full min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData} margin={{ top: 45, right: 55, left: 55, bottom: 25 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                        <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 13, fill: '#64748b', fontWeight: 700}} dy={15} />
-                                        <YAxis tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b', fontWeight: 600}} domain={[0, yAxisMax]} ticks={shareTicks} />
+                                    <LineChart data={chartData} margin={{ top: 30, right: 55, left: 55, bottom: 40 }}>
+                                        <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" strokeOpacity={0.4} />
+                                        
+                                        <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 13, fill: '#64748b', fontWeight: 700}} dy={20} padding={{ left: 30, right: 30 }} />
+                                        
+                                        <YAxis scale="sqrt" domain={[0, 42]} ticks={shareTicks} tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b', fontWeight: 600}} allowDataOverflow />
+                                        
                                         <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 'bold' }} />
+                                        
                                         {visibleSegments.map(seg => (
-                                            <Line key={seg.id} type="monotone" dataKey={seg.id} stroke={colors[seg.id]} strokeWidth={4} dot={{ r: 5, fill: 'white', strokeWidth: 3, stroke: colors[seg.id] }} isAnimationActive={false}>
+                                            <Line key={seg.id} type="monotone" dataKey={seg.id} stroke={colors[seg.id]} strokeWidth={2.5} dot={{ r: 4, fill: 'white', strokeWidth: 2, stroke: colors[seg.id] }} isAnimationActive={false}>
                                                 <LabelList dataKey={seg.id} content={(props) => {
                                                     const { x, y, value, index } = props;
-                                                    const monthData = visibleSegments.map(s => ({ id: s.id, val: s.history[index].share })).sort((a, b) => b.val - a.val);
-                                                    const isBottomGroup = value < 10;
-                                                    let dx = 0, dy = -16, anchor = "middle";
+                                                    let dy = 0, anchor = "middle";
 
-                                                    if (index === 0) {
-                                                        anchor = "start"; dx = 6;
-                                                        if (isBottomGroup) {
-                                                            const bottomVisible = monthData.filter(s => s.val < 10);
-                                                            const myRank = bottomVisible.findIndex(s => s.id === seg.id);
-                                                            dy = -12 - (myRank * 14);
-                                                        }
-                                                    } else if (index === chartData.length - 1) {
-                                                        anchor = "end"; dx = -6;
-                                                        if (isBottomGroup) {
-                                                            const bottomVisible = monthData.filter(s => s.val < 10);
-                                                            const myRank = bottomVisible.findIndex(s => s.id === seg.id);
-                                                            dy = -12 - (myRank * 14);
-                                                        }
-                                                    } else {
-                                                        if (isBottomGroup) {
-                                                            if (seg.id === 'sistema') { dx = -24; dy = -14; }
-                                                            else if (seg.id === 'financas') { dx = 0; dy = -32; }
-                                                            else if (seg.id === 'conta') { dx = 24; dy = -14; }
-                                                            else if (seg.id === 'api') { dx = 0; dy = -48; }
-                                                            else { dx = 0; dy = -20; }
-                                                        } else {
-                                                            const topVisible = monthData.filter(s => s.val >= 10);
-                                                            const myTopRank = topVisible.findIndex(s => s.id === seg.id);
-                                                            dy = myTopRank % 2 === 0 ? -16 : 16;
-                                                        }
-                                                    }
-                                                    return (<g><text x={x} y={y} dx={dx} dy={dy} fill="none" fontSize="12" fontWeight="900" textAnchor={anchor} stroke="#ffffff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">{value}%</text><text x={x} y={y} dx={dx} dy={dy} fill={colors[seg.id]} fontSize="12" fontWeight="900" textAnchor={anchor}>{value}%</text></g>);
+                                                    if (index === 0) anchor = "start"; 
+                                                    if (index === chartData.length-1) anchor = "end";
+
+                                                    const monthData = visibleSegments.map(s => ({ id: s.id, val: s.history[index].share })).sort((a, b) => b.val - a.val);
+                                                    const myRank = monthData.findIndex(s => s.id === seg.id);
+
+                                                    if (myRank === 0) dy = -16;
+                                                    else if (myRank === 1) dy = 16;
+                                                    else if (myRank === 2) dy = -16;
+                                                    else if (myRank === 3) dy = 16;
+                                                    else if (myRank === 4) dy = -24; 
+                                                    else if (myRank === 5) dy = -10; 
+                                                    else if (myRank === 6) dy = 10;  
+                                                    else if (myRank === 7) dy = 24;  
+
+                                                    return (
+                                                        <g>
+                                                            <text x={x} y={y} dy={dy} fill="none" fontSize="11" fontWeight="800" textAnchor={anchor} stroke="#ffffff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">{value}%</text>
+                                                            <text x={x} y={y} dy={dy} fill={colors[seg.id]} fontSize="11" fontWeight="800" textAnchor={anchor}>{value}%</text>
+                                                        </g>
+                                                    );
                                                 }} />
                                             </Line>
                                         ))}
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
-                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100">
+                            
+                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100 legend-row whitespace-nowrap overflow-hidden">
                                 {data.segmentos.map(seg => (
-                                    <button key={seg.id} onClick={() => toggleSegmentVisibility(seg.id)} className={`mx-3 bg-transparent border-none p-0 transition-all ${hiddenSegments.includes(seg.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`} style={{ display: 'inline-block' }}>
-                                        <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: colors[seg.id], verticalAlign: 'middle', marginRight: '6px' }}></span>
+                                    <button key={seg.id} onClick={() => toggleSegmentVisibility(seg.id)} className={`mx-2 bg-transparent border-none p-0 transition-all inline-block ${hiddenSegments.includes(seg.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
+                                        <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: colors[seg.id], verticalAlign: 'middle', marginRight: '4px' }}></span>
                                         <span style={{ fontSize: '13px', fontWeight: 'bold', color: hiddenSegments.includes(seg.id) ? '#94a3b8' : '#334155', verticalAlign: 'middle' }}>{seg.name}</span>
                                     </button>
                                 ))}
@@ -439,7 +444,6 @@
                 );
             };
 
-            // --- ABA NÍVEIS ---
             const renderTabNiveis = () => {
                 const levels = [{ id: 'l1', label: 'Nível L1', color: BRAND_GREEN }, { id: 'l2', label: 'Nível L2', color: '#3b82f6' }, { id: 'l3', label: 'Nível L3', color: '#f59e0b' }, { id: 'l4', label: 'Nível L4', color: '#ef4444' }];
                 const history = data.niveis.history;
@@ -447,14 +451,18 @@
 
                 return (
                     <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
-                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-[75px]">
                             {levels.map(level => (
-                                <div key={level.id} className="flex-1 border-r last:border-0 border-slate-100 py-3 text-center">
-                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '16px' }}>
-                                        <div style={{ fontSize: '12px', fontWeight: '900', color: '#64748b' }}>{level.label}</div>
-                                        <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>Média do Período</div>
+                                <div key={level.id} className="flex-1 border-r last:border-0 border-slate-100 flex items-center px-5 py-3 export-card-row">
+                                    <div className="flex-grow flex flex-col justify-center min-w-0 pr-2 text-left">
+                                        <div className="text-[12px] font-black text-slate-500 uppercase tracking-tight leading-none">{level.label}</div>
+                                        <div className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 leading-none whitespace-nowrap">Média do Período</div>
                                     </div>
-                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '32px', fontWeight: '900', color: level.color }}>{(history.reduce((a, c) => a + c[level.id], 0) / history.length).toFixed(1)}%</div>
+                                    <div className="w-[110px] flex-shrink-0 flex items-center justify-end">
+                                        <div className="text-[32px] font-black card-value tracking-tighter" style={{ color: level.color, lineHeight: '1' }}>
+                                            {(history.reduce((a, c) => a + c[level.id], 0) / history.length).toFixed(1)}%
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -466,7 +474,7 @@
                                         <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 13, fill: '#64748b', fontWeight: 700}} dy={15} padding={{ left: 30, right: 30 }} />
                                         <YAxis scale="log" domain={[0.1, dataMax => dataMax * 1.5]} ticks={[0.1, 1, 10, 100]} tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b', fontWeight: 600}} allowDataOverflow />
                                         {visibleLevels.map(lvl => (
-                                            <Line key={lvl.id} type="monotone" dataKey={lvl.id} stroke={lvl.color} strokeWidth={4} dot={{ r: 5, fill: 'white', strokeWidth: 3, stroke: lvl.color }} activeDot={{ r: 8 }} isAnimationActive={false}>
+                                            <Line key={lvl.id} type="monotone" dataKey={lvl.id} stroke={lvl.color} strokeWidth={2.5} dot={{ r: 4, fill: 'white', strokeWidth: 2, stroke: lvl.color }} activeDot={{ r: 8 }} isAnimationActive={false}>
                                                 <LabelList dataKey={lvl.id} content={(props) => {
                                                     const { x, y, value, index } = props;
                                                     let dy = -16, anchor = "middle";
@@ -486,9 +494,9 @@
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
-                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100">
+                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100 legend-row whitespace-nowrap">
                                 {levels.map(lvl => (
-                                    <button key={lvl.id} onClick={() => toggleNivelVisibility(lvl.id)} className={`mx-4 transition-all duration-200 cursor-pointer bg-transparent border-none p-0 ${hiddenNiveis.includes(lvl.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
+                                    <button key={lvl.id} onClick={() => toggleNivelVisibility(lvl.id)} className={`mx-4 transition-all duration-200 cursor-pointer bg-transparent border-none p-0 inline-block ${hiddenNiveis.includes(lvl.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
                                         <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: lvl.color, verticalAlign: 'middle', marginRight: '8px' }}></span>
                                         <span style={{ fontSize: '13px', fontWeight: 'bold', color: hiddenNiveis.includes(lvl.id) ? '#94a3b8' : '#334155', verticalAlign: 'middle' }}>{lvl.label}</span>
                                     </button>
@@ -499,7 +507,6 @@
                 );
             };
 
-            // --- ABA TIPOS ---
             const renderTabTipos = () => {
                 const types = [{ id: 'duvida', label: 'Dúvidas', color: BRAND_GREEN }, { id: 'problema', label: 'Problemas', color: '#3b82f6' }, { id: 'sugestao', label: 'Sugestões', color: '#f59e0b' }];
                 const history = data.tipos.history;
@@ -507,14 +514,14 @@
 
                 return (
                     <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
-                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-[75px]">
                             {types.map(type => (
-                                <div key={type.id} className="flex-1 border-r last:border-0 border-slate-100 py-3 text-center">
-                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '16px' }}>
-                                        <div style={{ fontSize: '12px', fontWeight: '900', color: '#64748b' }}>{type.label}</div>
-                                        <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>Média do Período</div>
+                                <div key={type.id} className="flex-1 border-r last:border-0 border-slate-100 flex items-center justify-center no-break py-3 px-6 export-card-row">
+                                    <div className="text-left flex flex-col justify-center">
+                                        <div className="text-[12px] font-black text-slate-500 uppercase leading-normal">{type.label}</div>
+                                        <div className="text-[9px] font-bold text-slate-400 uppercase leading-normal">Média do Período</div>
                                     </div>
-                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '32px', fontWeight: '900', color: type.color }}>{(history.reduce((a, c) => a + c[type.id], 0) / history.length).toFixed(1)}%</div>
+                                    <div className="ml-auto text-[32px] font-black card-value" style={{ color: type.color, lineHeight: '1.2' }}>{(history.reduce((a, c) => a + c[type.id], 0) / history.length).toFixed(1)}%</div>
                                 </div>
                             ))}
                         </div>
@@ -526,7 +533,7 @@
                                         <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 13, fill: '#64748b', fontWeight: 700}} dy={15} padding={{ left: 30, right: 30 }} />
                                         <YAxis scale="log" domain={[1, dataMax => dataMax * 1.5]} ticks={[1, 10, 100]} tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b', fontWeight: 600}} allowDataOverflow />
                                         {visibleTypes.map(type => (
-                                            <Line key={type.id} type="monotone" dataKey={type.id} stroke={type.color} strokeWidth={4} dot={{ r: 5, fill: 'white', strokeWidth: 3, stroke: type.color }} activeDot={{ r: 8 }} isAnimationActive={false}>
+                                            <Line key={type.id} type="monotone" dataKey={type.id} stroke={type.color} strokeWidth={2.5} dot={{ r: 4, fill: 'white', strokeWidth: 2, stroke: type.color }} activeDot={{ r: 8 }} isAnimationActive={false}>
                                                 <LabelList dataKey={type.id} content={(props) => {
                                                     const { x, y, value, index } = props;
                                                     let dy = -16, anchor = "middle";
@@ -545,9 +552,9 @@
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
-                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100">
+                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100 legend-row whitespace-nowrap">
                                 {types.map(type => (
-                                    <button key={type.id} onClick={() => toggleTipoVisibility(type.id)} className={`mx-4 transition-all duration-200 cursor-pointer bg-transparent border-none p-0 ${hiddenTipos.includes(type.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
+                                    <button key={type.id} onClick={() => toggleTipoVisibility(type.id)} className={`mx-4 transition-all duration-200 cursor-pointer bg-transparent border-none p-0 inline-block ${hiddenTipos.includes(type.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
                                         <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: type.color, verticalAlign: 'middle', marginRight: '8px' }}></span>
                                         <span style={{ fontSize: '13px', fontWeight: 'bold', color: hiddenTipos.includes(type.id) ? '#94a3b8' : '#334155', verticalAlign: 'middle' }}>{type.label}</span>
                                     </button>
@@ -558,7 +565,6 @@
                 );
             };
 
-            // --- ABA CONTA DIGITAL ---
             const renderTabContaDigital = () => {
                 const history = data.contaDigital.history;
                 const current = history[history.length - 1];
@@ -566,29 +572,29 @@
                     <div className="flex-grow flex flex-col gap-6 pb-4 min-h-0">
                         <div className="grid grid-cols-3 gap-6 shrink-0">
                             <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
-                                <span className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-2">Clientes Ativos ({latestMonthName})</span>
-                                <span className="text-4xl font-black text-slate-800">{current.clientes.toLocaleString('pt-BR')}</span>
+                                <span className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-2 leading-none">Clientes Ativos ({latestMonthName})</span>
+                                <span className="text-4xl font-black text-slate-800 leading-none">{current.clientes.toLocaleString('pt-BR')}</span>
                             </div>
                             <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
-                                <span className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-2">Atendimentos ({latestMonthName})</span>
-                                <span className="text-4xl font-black text-slate-800">{current.volume.toLocaleString('pt-BR')}</span>
+                                <span className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-2 leading-none">Atendimentos ({latestMonthName})</span>
+                                <span className="text-4xl font-black text-slate-800 leading-none">{current.volume.toLocaleString('pt-BR')}</span>
                             </div>
                             <div className="bg-emerald-50 p-6 rounded-2xl border-2 border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm">
-                                <span className="text-emerald-600 font-bold uppercase text-xs tracking-widest mb-2">Taxa de Contato ({latestMonthName})</span>
-                                <span className="text-5xl font-black text-emerald-600">{Number(current.contactRate).toFixed(2).replace('.', ',')}%</span>
+                                <span className="text-emerald-600 font-bold uppercase text-xs tracking-widest mb-2 leading-none">Taxa de Contato ({latestMonthName})</span>
+                                <span className="text-5xl font-black text-emerald-600 leading-none">{Number(current.contactRate).toFixed(2).replace('.', ',')}%</span>
                             </div>
                         </div>
                         <div className="flex-grow grid grid-cols-2 gap-6 min-h-0">
                             <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 flex flex-col shadow-sm overflow-visible">
-                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-2 text-center">Clientes ativos e Atendimentos</h3>
+                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-2 text-center leading-none">Clientes ativos e Atendimentos</h3>
                                 <div className="flex justify-center gap-6 mb-4 text-[10px] font-bold text-slate-500 uppercase">
                                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-400 rounded-sm"></div> Clientes ativos</div>
                                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-sm"></div> Atendimentos</div>
                                 </div>
-                                <div className="flex-grow w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={history} margin={{ top: 25, right: 10, left: 10, bottom: 0 }}><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.25]} /><Bar dataKey="clientes" fill="#94a3b8" radius={[2, 2, 0, 0]} maxBarSize={40}><LabelList dataKey="clientes" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: '#64748b', fontWeight: 700 }} offset={5} /></Bar><Bar dataKey="volume" fill={BRAND_GREEN} radius={[2, 2, 0, 0]} maxBarSize={40}><LabelList dataKey="volume" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: BRAND_GREEN, fontWeight: 700 }} offset={5} /></Bar></BarChart></ResponsiveContainer></div>
+                                <div className="flex-grow w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={history} margin={{ top: 25, right: 10, left: 10, bottom: 0 }}><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.25]} /><Bar dataKey="clientes" fill="#94a3b8" radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="clientes" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: '#64748b', fontWeight: 700 }} offset={5} /></Bar><Bar dataKey="volume" fill={BRAND_GREEN} radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="volume" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: BRAND_GREEN, fontWeight: 700 }} offset={5} /></Bar></BarChart></ResponsiveContainer></div>
                             </div>
                             <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 flex flex-col shadow-sm overflow-visible">
-                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-6 text-center mt-2">Taxa de Contato</h3>
+                                <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-6 text-center mt-2 leading-none">Taxa de Contato</h3>
                                 <div className="flex-grow w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={history} margin={{ top: 25, right: 25, left: 25, bottom: 0 }}><defs><linearGradient id="colorContact" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={BRAND_GREEN} stopOpacity={0.35}/><stop offset="95%" stopColor={BRAND_GREEN} stopOpacity={0}/></linearGradient></defs><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.3]} /><Area type="monotone" dataKey="contactRate" stroke={BRAND_GREEN} strokeWidth={4} fill="url(#colorContact)" dot={{ r: 5, fill: 'white', stroke: BRAND_GREEN, strokeWidth: 3 }} isAnimationActive={false}><LabelList dataKey="contactRate" position="top" formatter={v => `${Number(v).toFixed(2).replace('.', ',')}%`} style={{ fontSize: '12px', fill: BRAND_GREEN, fontWeight: 900 }} offset={15} /></Area></AreaChart></ResponsiveContainer></div>
                             </div>
                         </div>
@@ -596,7 +602,6 @@
                 );
             };
 
-            // --- ABA INCIDENTES ---
             const renderTabIncidentes = () => {
                 const history = data.incidentes.history;
                 const avgInc = (history.reduce((a, b) => a + b.incidentes, 0) / history.length).toFixed(1);
@@ -606,28 +611,28 @@
 
                 return (
                     <div className="flex-grow flex flex-col gap-3 pb-0 min-h-0">
-                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
-                            <div className="flex-1 border-r border-slate-100 py-3 text-center">
-                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>INCIDENTES</div><div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
-                                <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: '#ef4444' }}>{avgInc}</div>
+                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-[75px]">
+                            <div className="flex-1 border-r border-slate-100 flex items-center justify-center no-break">
+                                <div className="text-left mr-3 flex flex-col justify-center"><div className="text-[11px] font-black text-slate-500 uppercase leading-none">INCIDENTES</div><div className="text-[9px] font-bold text-slate-400 uppercase mt-1 leading-none">MÉDIA MENSAL</div></div>
+                                <div className="text-[28px] font-black card-value" style={{ color: '#ef4444', lineHeight: '1' }}>{avgInc}</div>
                             </div>
-                            <div className="flex-1 border-r border-slate-100 py-3 text-center">
-                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>TICKETS VINC.</div><div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
-                                <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: '#94a3b8' }}>{avgTickets}</div>
+                            <div className="flex-1 border-r border-slate-100 flex items-center justify-center no-break">
+                                <div className="text-left mr-3 flex flex-col justify-center"><div className="text-[11px] font-black text-slate-500 uppercase leading-none">TICKETS VINC.</div><div className="text-[9px] font-bold text-slate-400 uppercase mt-1 leading-none">MÉDIA MENSAL</div></div>
+                                <div className="text-[28px] font-black card-value" style={{ color: '#94a3b8', lineHeight: '1' }}>{avgTickets}</div>
                             </div>
-                            <div className="flex-1 border-r border-slate-100 py-3 text-center">
-                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>REPRESENT. %</div><div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
-                                <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: ACCENT_NAVY }}>{avgRep}%</div>
+                            <div className="flex-1 border-r border-slate-100 flex items-center justify-center no-break">
+                                <div className="text-left mr-3 flex flex-col justify-center"><div className="text-[11px] font-black text-slate-500 uppercase leading-none">REPRESENT. %</div><div className="text-[9px] font-bold text-slate-400 uppercase mt-1 leading-none">MÉDIA MENSAL</div></div>
+                                <div className="text-[28px] font-black card-value" style={{ color: ACCENT_NAVY, lineHeight: '1' }}>{avgRep}%</div>
                             </div>
-                            <div className="flex-1 py-3 text-center">
-                                <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}><div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b' }}>INTERNOS %</div><div style={{ fontSize: '9px', fontBold: 'bold', color: '#94a3b8' }}>MÉDIA MENSAL</div></div>
-                                <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: BRAND_GREEN }}>{avgInt}%</div>
+                            <div className="flex-1 flex items-center justify-center no-break">
+                                <div className="text-left mr-3 flex flex-col justify-center"><div className="text-[11px] font-black text-slate-500 uppercase leading-none">INTERNOS %</div><div className="text-[9px] font-bold text-slate-400 uppercase mt-1 leading-none">MÉDIA MENSAL</div></div>
+                                <div className="text-[28px] font-black card-value" style={{ color: BRAND_GREEN, lineHeight: '1' }}>{avgInt}%</div>
                             </div>
                         </div>
 
                         <div className="flex-grow grid grid-cols-2 gap-4 min-h-0">
                             <div className="bg-white rounded-xl border-2 border-slate-200 p-4 flex flex-col shadow-sm overflow-visible">
-                                <h3 className="text-xs font-black uppercase text-slate-500 mb-4 tracking-tighter">Volume de Incidentes e Impacto na Operação</h3>
+                                <h3 className="text-xs font-black uppercase text-slate-500 mb-4 tracking-tighter leading-none">Volume de Incidentes e Impacto na Operação</h3>
                                 <div className="flex-grow">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <ComposedChart data={history} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
@@ -642,15 +647,14 @@
                                         </ComposedChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <div className="flex justify-center gap-6 mt-4 text-[10px] font-bold text-slate-500 uppercase">
-                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-400 rounded-full"></div> Tickets Vinculados</div>
-                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div> Incidentes Criados</div>
-                                    <div className="flex items-center gap-2"><div className="w-6 h-0.5 bg-slate-800"></div> Representatividade (%)</div>
+                                <div className="flex justify-center gap-6 mt-4 text-[10px] font-bold text-slate-500 uppercase legend-row">
+                                    <div className="legend-item-print"><div className="w-3 h-3 bg-slate-400 rounded-full inline-block align-middle mr-1"></div> Tickets Vinculados</div>
+                                    <div className="legend-item-print" style={{marginLeft:'15px'}}><div className="w-3 h-3 bg-red-500 rounded-full inline-block align-middle mr-1"></div> Incidentes Criados</div>
                                 </div>
                             </div>
 
                             <div className="bg-white rounded-xl border-2 border-slate-200 p-4 flex flex-col shadow-sm overflow-visible">
-                                <h3 className="text-xs font-black uppercase text-slate-500 mb-4 tracking-tighter">Representação de Incidentes por Origem</h3>
+                                <h3 className="text-xs font-black uppercase text-slate-500 mb-4 tracking-tighter leading-none">Representação de Incidentes por Origem</h3>
                                 <div className="flex-grow">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={history} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
@@ -663,9 +667,9 @@
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <div className="flex justify-center gap-8 mt-4 text-[10px] font-bold text-slate-500 uppercase">
-                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-full"></div> Problemas Internos (%)</div>
-                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-300 rounded-full"></div> Problemas Externos (%)</div>
+                                <div className="flex justify-center gap-8 mt-4 text-[10px] font-bold text-slate-500 uppercase legend-row">
+                                    <div className="legend-item-print"><div className="w-3 h-3 bg-emerald-500 rounded-full inline-block align-middle mr-1"></div> Problemas Internos (%)</div>
+                                    <div className="legend-item-print" style={{marginLeft:'20px'}}><div className="w-3 h-3 bg-red-300 rounded-full inline-block align-middle mr-1"></div> Problemas Externos (%)</div>
                                 </div>
                             </div>
                         </div>
@@ -673,15 +677,11 @@
                 );
             };
 
-            // --- NOVA ABA: PRINCIPAIS INCIDENTES DO MÊS (AGRUPAMENTO E SOMA DA QUANTIDADE EM VERDE) ---
             const renderTabPrincipaisIncidentes = () => {
                 const history = data.principaisIncidentes.history;
-                
-                // Soma dinâmica inteligente de "Quantidade" (Chat + Ticket) de todos os incidentes
-                const totalQuantidadeGeral = history.reduce((acc, curr) => acc + (curr.chat || 0) + (curr.ticket || 0), 0);
+                const totalTicketsAfetados = history.reduce((acc, curr) => acc + curr.tickets, 0);
                 const numOfensores = history.length;
                 
-                // Agrupamento automático e soma da "Quantidade" por categoria (Grupo) para o gráfico horizontal
                 const categoryAggregation = history.reduce((acc, item) => {
                     const itemQty = (item.chat || 0) + (item.ticket || 0);
                     const existing = acc.find(x => x.category === item.category);
@@ -693,22 +693,17 @@
                     return acc;
                 }, []);
 
-                // Ordenação decrescente para o gráfico de barras
                 categoryAggregation.sort((a, b) => b.quantidade - a.quantidade);
-
-                const mediaQuantidade = numOfensores > 0 ? (totalQuantidadeGeral / numOfensores).toFixed(0) : 0;
-                
-                // Identificação dinâmica do maior Grupo Ofensor com base na soma agregada de Quantidade
+                const mediaQuantidade = numOfensores > 0 ? (totalTicketsAfetados / numOfensores).toFixed(0) : 0;
                 const maxOfensorGroup = categoryAggregation[0] || { category: 'N/A', quantidade: 0 };
                 const maxOfensorLabel = `${maxOfensorGroup.category} (${maxOfensorGroup.quantidade})`;
 
                 return (
                     <div className="flex-grow flex flex-col gap-3 pb-0 min-h-0">
-                        {/* Cards Superiores Dinâmicos e Inteligentes */}
                         <div className="grid grid-cols-4 gap-3 shrink-0">
                             <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
                                 <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-none">Quantidade Total ({latestMonthFullName})</span>
-                                <span className="text-2xl font-black text-slate-800 mt-1 leading-none">{totalQuantidadeGeral.toLocaleString()}</span>
+                                <span className="text-2xl font-black text-slate-800 mt-1 leading-none">{totalTicketsAfetados.toLocaleString()}</span>
                             </div>
                             <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
                                 <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-none">Ofensores Mapeados</span>
@@ -724,10 +719,7 @@
                             </div>
                         </div>
 
-                        {/* Bloco de Gráficos e Tabelas */}
                         <div className="flex-grow grid grid-cols-5 gap-3 min-h-0">
-                            
-                            {/* Gráfico de Barras Horizontal de Setores (2/5 da largura) em VERDE INSTITUCIONAL */}
                             <div className="col-span-2 bg-white rounded-xl border border-slate-200 p-3 flex flex-col shadow-sm">
                                 <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-wider">Top Ofensores Consolidados: Soma de Quantidade por Grupo</h3>
                                 <div className="flex-grow w-full min-h-0">
@@ -756,7 +748,6 @@
                                 </div>
                             </div>
 
-                            {/* Tabela Executiva Detalhada (3/5 da largura) */}
                             <div className="col-span-3 bg-white rounded-xl border border-slate-200 p-3 flex flex-col shadow-sm overflow-hidden">
                                 <h3 className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">Detalhamento Individual de Crises em {latestMonthFullName}</h3>
                                 <div className="flex-grow overflow-y-auto">
