@@ -4,16 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Executivo - Segmentos e Níveis</title>
-    <!-- Bibliotecas carregadas via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
     <script crossorigin src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Biblioteca para exportação de imagem em alta qualidade -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Importação da Fonte Roboto para consistência com a apresentação -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         body { 
@@ -59,7 +56,7 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script id="app-code" type="text/babel">
         // --- ÍCONES SVG ---
         const DatabaseIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>);
         const PlusCircleIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>);
@@ -74,7 +71,7 @@
 
         const BRAND_GREEN = '#34ad61';
         const ACCENT_NAVY = '#1e293b';
-        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v22'; 
+        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v23'; 
         const apiKey = "";
 
         const INITIAL_DATA = {
@@ -170,6 +167,7 @@
             const [isExporting, setIsExporting] = React.useState(false);
             const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
             const [isExportCodeModalOpen, setIsExportCodeModalOpen] = React.useState(false);
+            const [fullHtmlCode, setFullHtmlCode] = React.useState("");
             const [aiInsights, setAiInsights] = React.useState("");
             const [isGeneratingAI, setIsGeneratingAI] = React.useState(false);
             
@@ -304,10 +302,57 @@
                 setData(newData);
             };
 
-            const handleCopyCode = () => {
-                const jsonString = JSON.stringify(data, null, 2);
-                navigator.clipboard.writeText(jsonString);
-                alert("Código JSON copiado! Cole no chat para que eu possa atualizar o arquivo fonte.");
+            // Função mestre que gera o arquivo HTML completo
+            const getFullHTMLString = () => {
+                const scriptElement = document.getElementById('app-code');
+                if (!scriptElement) return "Erro ao carregar código original.";
+                
+                const originalCode = scriptElement.textContent;
+                const regex = /(const INITIAL_DATA = )(\{[\s\S]*?\})(;\s*const App = \(\) => \{)/;
+                const updatedCode = originalCode.replace(regex, `$1${JSON.stringify(data, null, 12)}$3`);
+
+                const headSection = `
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Executivo - Segmentos e Níveis</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+    <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"><\/script>
+    <script crossorigin src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"><\/script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Roboto', sans-serif; background-color: #cbd5e1; margin: 0; }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        #print-area { backface-visibility: hidden; -webkit-font-smoothing: antialiased; background-color: #f8fafc; font-family: 'Roboto', sans-serif; width: 1280px; height: 720px; }
+        .no-break { white-space: nowrap !important; }
+        @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .recharts-text { font-family: 'Roboto', sans-serif !important; }
+        .card-number-box { line-height: 1; display: flex; align-items: center; justify-content: flex-end; }
+    </style>`;
+
+                return `<!DOCTYPE html>\n<html lang="pt-br">\n<head>${headSection}\n</head>\n<body>\n    <div id="root"></div>\n\n    <script id="app-code" type="text/babel">\n${updatedCode}\n    <\/script>\n</body>\n</html>`;
+            };
+
+            const handleOpenExportModal = () => {
+                setFullHtmlCode(getFullHTMLString());
+                setIsExportCodeModalOpen(true);
+            };
+
+            const handleDownloadHTML = () => {
+                const blob = new Blob([fullHtmlCode], { type: 'text/html' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `dashboard-atualizado-${latestMonthName.toLowerCase()}.html`;
+                link.click();
+            };
+
+            const handleCopyFullHTML = () => {
+                navigator.clipboard.writeText(fullHtmlCode);
+                alert("HTML Completo copiado! Você já pode colar e substituir o seu arquivo atual.");
             };
 
             const latestMonthName = data.segmentos[0].history[data.segmentos[0].history.length - 1]?.month || "Atual";
@@ -881,289 +926,4 @@
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
                             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
                                 <div className="p-8 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-purple-100 flex justify-between items-center">
-                                    <div className="flex items-center gap-4"><div className="bg-white p-3 rounded-2xl shadow-sm border border-purple-100 text-indigo-600"><SparklesIcon size={28} /></div><div><h2 className="text-2xl font-black tracking-tight">Análise Estratégica Gemini</h2><p className="text-indigo-600 text-xs font-black uppercase tracking-widest">Relatório Inteligente de Atendimento</p></div></div>
-                                    <button onClick={() => setIsAIModalOpen(false)} className="text-slate-400 hover:text-slate-900 bg-white p-2.5 rounded-full shadow-sm transition-colors border border-slate-100"><XIcon size={24} /></button>
-                                </div>
-                                <div className="flex-grow overflow-y-auto p-10 prose max-w-none prose-slate">
-                                    {isGeneratingAI ? (<div className="h-full flex flex-col items-center justify-center py-16 space-y-6"><div className="w-20 h-20 border-8 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div><p className="text-slate-600 font-black text-lg animate-pulse-subtle uppercase tracking-tighter">Processando inteligência de dados...</p></div>) : (<div className="text-slate-800 leading-relaxed font-medium text-lg" dangerouslySetInnerHTML={{ __html: aiInsights.replace(/\n/g, '<br/>').replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-indigo-900">$1</strong>').replace(/### (.*?)\n/g, '<h3 class="text-xl font-black mt-8 mb-4 text-indigo-800 uppercase tracking-tight border-b-2 border-indigo-50 pb-2">$1</h3>').replace(/- (.*?)\n/g, '<li class="ml-6 mb-3">$1</li>') }} />)}
-                                </div>
-                                <div className="p-8 border-t border-slate-100 bg-slate-50 flex justify-end"><button onClick={() => setIsAIModalOpen(false)} className="px-12 py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg active:scale-95 uppercase tracking-widest text-xs">Retornar ao Dashboard</button></div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* MODAL DE EXPORTAÇÃO DE CÓDIGO (NOVO) */}
-                    {isExportCodeModalOpen && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden">
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                                    <div className="flex items-center gap-3">
-                                        <CodeIcon size={24} color="#4f46e5" />
-                                        <h2 className="text-xl font-bold font-black uppercase text-indigo-900">Exportar Dados (JSON)</h2>
-                                    </div>
-                                    <button onClick={() => setIsExportCodeModalOpen(false)} className="text-slate-400 hover:text-slate-900"><XIcon size={24} /></button>
-                                </div>
-                                <div className="p-6 bg-white">
-                                    <p className="mb-4 text-sm font-bold text-slate-600">Este é o código com as suas atualizações! Clique no botão abaixo para copiar e envie para mim no chat para que eu possa atualizá-las no arquivo principal.</p>
-                                    <textarea 
-                                        className="w-full h-80 p-4 text-[11px] font-mono bg-slate-900 text-emerald-400 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner" 
-                                        readOnly 
-                                        value={JSON.stringify(data, null, 2)}
-                                    ></textarea>
-                                </div>
-                                <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
-                                    <button onClick={handleCopyCode} className="px-10 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-xs shadow-md hover:bg-indigo-700 hover:scale-105 transition-all">Copiar Tudo</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* MODAL DE EDIÇÃO DE DADOS */}
-                    {isEditing && (
-                        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
-                                    <div className="flex items-center gap-3 text-slate-800">
-                                        <DatabaseIcon size={24} color={BRAND_GREEN} />
-                                        <h2 className="text-xl font-bold font-black uppercase">Editor - {
-                                            activeTab === 'segmentos' || activeTab === 'segmentos_share' ? 'Segmentos' :
-                                            activeTab === 'niveis' ? 'Níveis de Atendimento' :
-                                            activeTab === 'tipos' ? 'Tipos de Atendimento' :
-                                            activeTab === 'conta' ? 'Conta Digital' :
-                                            activeTab === 'incidentes' ? 'Gestão de Incidentes' :
-                                            'Principais Incidentes'
-                                        } ({latestMonthName})</h2>
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={handleAddMonth} className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-black transition-colors uppercase"><PlusCircleIcon size={16} /> Novo Mês</button>
-                                        <button onClick={() => setIsEditing(false)} className="text-slate-400 hover:text-slate-600 bg-white p-2 rounded-full border border-slate-200"><XIcon size={20} /></button>
-                                    </div>
-                                </div>
-                                
-                                <div className="flex-grow overflow-y-auto p-6 bg-white">
-                                    
-                                    {/* Editor para Segmentos e Share */}
-                                    {activeTab === 'segmentos' || activeTab === 'segmentos_share' ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {data.segmentos.map((seg, sIdx) => {
-                                                const lastIdx = seg.history.length - 1;
-                                                return (
-                                                    <div key={seg.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
-                                                        <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase">{seg.name}</h4>
-                                                        <div className="space-y-3 text-slate-800">
-                                                            <div><label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Volume</label><input type="number" value={seg.history[lastIdx]?.vol} onChange={(e) => { const newData = {...data}; newData.segmentos[sIdx].history[lastIdx].vol = parseInt(e.target.value) || 0; setData(newData); }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:border-indigo-500 outline-none font-bold text-slate-800" /></div>
-                                                            <div><label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Participação %</label><input type="number" step="0.1" value={seg.history[lastIdx]?.share} onChange={(e) => { const newData = {...data}; newData.segmentos[sIdx].history[lastIdx].share = parseFloat(e.target.value) || 0; setData(newData); }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:border-indigo-500 outline-none font-bold text-slate-800" /></div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : null}
-                                    
-                                    {/* Editor para Níveis */}
-                                    {activeTab === 'niveis' ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-                                            {['l1', 'l2', 'l3', 'l4'].map(levelKey => {
-                                                const lastNiveisIdx = data.niveis.history.length - 1;
-                                                return (
-                                                    <div key={levelKey} className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
-                                                        <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase">Nível {levelKey.toUpperCase()}</h4>
-                                                        <div>
-                                                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Share (%)</label>
-                                                            <input type="number" step="0.01" value={data.niveis.history[lastNiveisIdx]?.[levelKey]} onChange={(e) => {
-                                                                const newData = {...data};
-                                                                newData.niveis.history[lastNiveisIdx][levelKey] = parseFloat(e.target.value) || 0;
-                                                                setData(newData);
-                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : null}
-
-                                    {/* Editor para Tipos de Atendimento */}
-                                    {activeTab === 'tipos' ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                                            {[{id: 'duvida', label: 'Dúvidas'}, {id: 'problema', label: 'Problemas'}, {id: 'sugestao', label: 'Sugestões'}].map(type => {
-                                                const lastTiposIdx = data.tipos.history.length - 1;
-                                                return (
-                                                    <div key={type.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
-                                                        <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase">{type.label}</h4>
-                                                        <div>
-                                                            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Share (%)</label>
-                                                            <input type="number" step="0.01" value={data.tipos.history[lastTiposIdx]?.[type.id]} onChange={(e) => {
-                                                                const newData = {...data};
-                                                                newData.tipos.history[lastTiposIdx][type.id] = parseFloat(e.target.value) || 0;
-                                                                setData(newData);
-                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : null}
-
-                                    {/* Editor para Conta Digital */}
-                                    {activeTab === 'conta' ? (() => {
-                                        const lastContaIdx = data.contaDigital.history.length - 1;
-                                        return (
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Clientes Ativos</label>
-                                                    <input type="number" value={data.contaDigital.history[lastContaIdx]?.clientes} onChange={(e) => {
-                                                        const newData = {...data};
-                                                        newData.contaDigital.history[lastContaIdx].clientes = parseInt(e.target.value) || 0;
-                                                        setData(newData);
-                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
-                                                </div>
-                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Volume de Atendimentos</label>
-                                                    <input type="number" value={data.contaDigital.history[lastContaIdx]?.volume} onChange={(e) => {
-                                                        const newData = {...data};
-                                                        newData.contaDigital.history[lastContaIdx].volume = parseInt(e.target.value) || 0;
-                                                        setData(newData);
-                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
-                                                </div>
-                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                    <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Taxa de Contato (%)</label>
-                                                    <input type="number" step="0.01" value={data.contaDigital.history[lastContaIdx]?.contactRate} onChange={(e) => {
-                                                        const newData = {...data};
-                                                        newData.contaDigital.history[lastContaIdx].contactRate = parseFloat(e.target.value) || 0;
-                                                        setData(newData);
-                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 outline-none font-bold text-slate-800" />
-                                                </div>
-                                            </div>
-                                        );
-                                    })() : null}
-
-                                    {/* Editor para Gestão de Incidentes */}
-                                    {activeTab === 'incidentes' ? (() => {
-                                        const lastIncIdx = data.incidentes.history.length - 1;
-                                        return (
-                                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3 max-w-5xl mx-auto">
-                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Incidentes</label>
-                                                    <input type="number" value={data.incidentes.history[lastIncIdx]?.incidentes} onChange={(e) => {
-                                                        const newData = {...data};
-                                                        newData.incidentes.history[lastIncIdx].incidentes = parseInt(e.target.value) || 0;
-                                                        setData(newData);
-                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
-                                                </div>
-                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Tickets Vinc.</label>
-                                                    <input type="number" value={data.incidentes.history[lastIncIdx]?.tickets} onChange={(e) => {
-                                                        const newData = {...data};
-                                                        newData.incidentes.history[lastIncIdx].tickets = parseInt(e.target.value) || 0;
-                                                        setData(newData);
-                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
-                                                </div>
-                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Represent. (%)</label>
-                                                    <input type="number" step="0.01" value={data.incidentes.history[lastIncIdx]?.representatividade} onChange={(e) => {
-                                                        const newData = {...data};
-                                                        newData.incidentes.history[lastIncIdx].representatividade = parseFloat(e.target.value) || 0;
-                                                        setData(newData);
-                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
-                                                </div>
-                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Internos (%)</label>
-                                                    <input type="number" step="0.01" value={data.incidentes.history[lastIncIdx]?.internos} onChange={(e) => {
-                                                        const newData = {...data};
-                                                        newData.incidentes.history[lastIncIdx].internos = parseFloat(e.target.value) || 0;
-                                                        setData(newData);
-                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
-                                                </div>
-                                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                                    <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1">Externos (%)</label>
-                                                    <input type="number" step="0.01" value={data.incidentes.history[lastIncIdx]?.externos} onChange={(e) => {
-                                                        const newData = {...data};
-                                                        newData.incidentes.history[lastIncIdx].externos = parseFloat(e.target.value) || 0;
-                                                        setData(newData);
-                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
-                                                </div>
-                                            </div>
-                                        );
-                                    })() : null}
-
-                                    {/* Editor para Principais Incidentes */}
-                                    {activeTab === 'principais_incidentes' ? (
-                                        <div className="grid grid-cols-1 gap-4 max-w-5xl mx-auto">
-                                            {data.principaisIncidentes.history.map((item, idx) => (
-                                                <div key={item.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center text-slate-800 font-bold">
-                                                    <div className="col-span-4">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Incidente</label>
-                                                        <input type="text" value={item.incident} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].incident = e.target.value;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                    </div>
-                                                    <div className="col-span-2">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Categoria (Setor)</label>
-                                                        <input type="text" value={item.category} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].category = e.target.value;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                    </div>
-                                                    <div className="col-span-1">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Tickets</label>
-                                                        <input type="number" value={item.tickets || item.ticket} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].tickets = parseInt(e.target.value) || 0;
-                                                            newData.principaisIncidentes.history[idx].ticket = parseInt(e.target.value) || 0; // fallback compatibility
-                                                            setData(newData);
-                                                        }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs text-center" />
-                                                    </div>
-                                                    <div className="col-span-1">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Chat</label>
-                                                        <input type="number" value={item.chat} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].chat = parseInt(e.target.value) || 0;
-                                                            setData(newData);
-                                                        }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs text-center" />
-                                                    </div>
-                                                    <div className="col-span-2">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Duração</label>
-                                                        <input type="text" value={item.duration} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].duration = e.target.value;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                    </div>
-                                                    <div className="col-span-2">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Impacto</label>
-                                                        <select value={item.impact} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].impact = e.target.value;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
-                                                            <option value="Alto">Alto</option>
-                                                            <option value="Médio">Médio</option>
-                                                            <option value="Baixo">Baixo</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : null}
-
-                                </div>
-                                <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
-                                    <button onClick={() => setIsExportCodeModalOpen(true)} className="px-8 py-2.5 rounded-lg text-indigo-700 bg-indigo-100 font-black shadow-sm flex items-center gap-2 hover:bg-indigo-200 uppercase text-xs transition-all"><CodeIcon size={18} /> Exportar Código JSON</button>
-                                    <button onClick={() => setIsEditing(false)} className="px-8 py-2.5 rounded-lg text-slate-600 font-bold hover:bg-slate-200 uppercase text-xs">Cancelar</button>
-                                    <button onClick={() => handleSave(data)} className="px-10 py-2.5 text-white rounded-lg font-black shadow-lg flex items-center gap-2 uppercase text-xs transition-all" style={{ backgroundColor: BRAND_GREEN }}><SaveIcon size={18} /> Salvar Tudo</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                                    <div className="flex items-center gap-4"><div className="bg-white p-3 rounded-2xl shadow-sm border border-purple-100 text-indigo-600"><SparklesIcon size
