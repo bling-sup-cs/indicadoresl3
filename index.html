@@ -4,25 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Executivo - Segmentos e Níveis</title>
-    <!-- Bibliotecas carregadas via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
     <script crossorigin src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Biblioteca para exportação de imagem em alta qualidade -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Importação da Fonte Roboto para consistência com a apresentação -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Roboto', sans-serif; 
-            background-color: #cbd5e1; 
-            margin: 0; 
-        }
+        body { font-family: 'Roboto', sans-serif; background-color: #cbd5e1; margin: 0; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
-        
         #print-area {
             backface-visibility: hidden;
             -webkit-font-smoothing: antialiased;
@@ -31,29 +23,17 @@
             width: 1280px;
             height: 720px;
         }
-
         .no-break { white-space: nowrap !important; }
-
-        @keyframes pulse-subtle {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        .animate-pulse-subtle {
-            animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        /* Ajuste fino para Recharts usar Roboto */
-        .recharts-text {
-            font-family: 'Roboto', sans-serif !important;
-        }
+        @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .recharts-text { font-family: 'Roboto', sans-serif !important; }
+        .card-number-box { line-height: 1; display: flex; align-items: center; justify-content: flex-end; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <!-- ATENÇÃO: ID adicionado à tag script para o motor de compilação funcionar -->
     <script id="app-code" type="text/babel">
-        // --- ÍCONES SVG ---
         const DatabaseIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>);
         const PlusCircleIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>);
         const XIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
@@ -62,12 +42,11 @@
         const SparklesIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path></svg>);
         const CodeIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>);
 
-        // --- COMPONENTES RECHARTS ---
         const { Tooltip, ResponsiveContainer, ComposedChart, BarChart, LineChart, CartesianGrid, Legend, Bar, Line, YAxis, Cell, XAxis, LabelList, AreaChart, Area } = window.Recharts;
 
         const BRAND_GREEN = '#34ad61';
         const ACCENT_NAVY = '#1e293b';
-        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v25'; 
+        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v26'; 
         const apiKey = "";
 
         const INITIAL_DATA = {
@@ -163,7 +142,7 @@
                 if (saved) return JSON.parse(saved);
                 return INITIAL_DATA;
             });
-            const [activeTab, setActiveTab] = React.useState('principais_incidentes'); // default para a aba modificada para facilitar teste
+            const [activeTab, setActiveTab] = React.useState('segmentos_share');
             const [isEditing, setIsEditing] = React.useState(false);
             const [isExporting, setIsExporting] = React.useState(false);
             const [isAIModalOpen, setIsAIModalOpen] = React.useState(false);
@@ -303,7 +282,7 @@
                 setData(newData);
             };
 
-            // Função segura para gerar o HTML do Dashboard sem quebrar o interpretador
+            // Função segura para gerar o HTML do Dashboard
             const getFullHTMLString = () => {
                 const scriptElement = document.getElementById('app-code');
                 if (!scriptElement) return "Erro ao carregar código original.";
@@ -752,30 +731,36 @@
                 const maxOfensorGroup = categoryAggregation[0] || { category: 'N/A', quantidade: 0 };
                 const maxOfensorLabel = `${maxOfensorGroup.category} (${maxOfensorGroup.quantidade})`;
 
+                // Garantir 9 slots na tabela
+                const paddedHistory = [...history];
+                while(paddedHistory.length < 9) {
+                    paddedHistory.push({ id: `empty-${paddedHistory.length}`, incident: '-', category: '-', tickets: 0, chat: 0, duration: '-', impact: '-' });
+                }
+
                 return (
                     <div className="flex-grow flex flex-col gap-3 pb-0 min-h-0">
                         <div className="grid grid-cols-4 gap-3 shrink-0">
-                            <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
                                 <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-none">Quantidade Total ({latestMonthFullName})</span>
                                 <span className="text-2xl font-black text-slate-800 mt-1 leading-none">{totalTicketsAfetados.toLocaleString()}</span>
                             </div>
-                            <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
                                 <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-none">Ofensores Mapeados</span>
                                 <span className="text-2xl font-black text-indigo-600 mt-1 leading-none">{numOfensores}</span>
                             </div>
-                            <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
                                 <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-none">Média de Vol / Ofensor</span>
                                 <span className="text-2xl font-black text-amber-600 mt-1 leading-none">{parseInt(mediaQuantidade).toLocaleString()}</span>
                             </div>
-                            <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm">
+                            <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm">
                                 <span className="text-emerald-600 font-bold uppercase text-[9px] tracking-wider leading-none">Maior Setor Ofensor ({latestMonthFullName})</span>
                                 <span className="text-2xl font-black text-emerald-600 mt-1 leading-none truncate w-full max-w-[240px]" title={maxOfensorLabel}>{maxOfensorLabel}</span>
                             </div>
                         </div>
 
                         <div className="flex-grow grid grid-cols-5 gap-3 min-h-0">
-                            <div className="col-span-2 bg-white rounded-xl border border-slate-200 p-3 flex flex-col shadow-sm">
-                                <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-wider">Top Ofensores Consolidados: Soma de Quantidade por Grupo</h3>
+                            <div className="col-span-2 bg-white rounded-xl border border-slate-200 p-2.5 flex flex-col shadow-sm">
+                                <h3 className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-wider">Top Ofensores Consolidados: Soma de Vol por Grupo</h3>
                                 <div className="flex-grow w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart 
@@ -794,7 +779,7 @@
                                                 width={90}
                                             />
                                             <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
-                                            <Bar dataKey="quantidade" name="Vol. Total (Chat+Tkt)" fill={BRAND_GREEN} radius={[0, 4, 4, 0]} isAnimationActive={false}>
+                                            <Bar dataKey="quantidade" name="Vol. Total (Chat+Tkt)" fill={BRAND_GREEN} radius={[0, 4, 4, 0]} isAnimationActive={false} maxBarSize={30}>
                                                 <LabelList dataKey="quantidade" position="right" style={{ fontSize: '10px', fill: '#475569', fontWeight: 900 }} />
                                             </Bar>
                                         </BarChart>
@@ -802,43 +787,41 @@
                                 </div>
                             </div>
 
-                            <div className="col-span-3 bg-white rounded-xl border border-slate-200 p-2 flex flex-col shadow-sm overflow-hidden">
-                                <h3 className="text-[10px] font-black uppercase text-slate-400 mb-1 px-1 tracking-wider">Detalhamento Individual de Crises em {latestMonthFullName}</h3>
-                                <div className="flex-grow overflow-y-auto">
-                                    <table className="w-full text-left border-collapse">
+                            <div className="col-span-3 bg-white rounded-xl border border-slate-200 py-2 px-3 flex flex-col shadow-sm overflow-hidden">
+                                <h3 className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider shrink-0">Detalhamento Individual de Crises em {latestMonthFullName}</h3>
+                                <div className="flex-grow flex flex-col justify-between overflow-hidden">
+                                    <table className="w-full text-left border-collapse h-full">
                                         <thead>
                                             <tr className="border-b border-slate-200">
-                                                <th className="py-1.5 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider">Incidente</th>
-                                                <th className="py-1.5 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Chats/Tkts</th>
-                                                <th className="py-1.5 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Quantidade</th>
-                                                <th className="py-1.5 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Duração</th>
-                                                <th className="py-1.5 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Impacto</th>
+                                                <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider w-[65%]">Incidente</th>
+                                                <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Quantidade</th>
+                                                <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Duração</th>
+                                                <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Impacto</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {history.map((item) => {
+                                            {paddedHistory.slice(0, 9).map((item) => {
                                                 const totalQty = (item.chat || 0) + (item.ticket || 0) + (item.tickets || 0);
+                                                const isEmpty = item.incident === '-';
                                                 return (
-                                                    <tr key={item.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50">
+                                                    <tr key={item.id} className="border-b border-slate-100 last:border-b-0">
                                                         <td className="py-1 px-2">
-                                                            <div className="font-bold text-slate-700 text-[10px] leading-tight">{item.incident}</div>
-                                                            <span className="text-[8px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-1 py-[1px] rounded inline-block mt-0">{item.category}</span>
+                                                            <div className="font-bold text-slate-700 text-sm leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[550px]" title={item.incident}>{item.incident}</div>
+                                                            {!isEmpty && <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md inline-block mt-0.5">{item.category}</span>}
                                                         </td>
-                                                        <td className="py-1 px-2 text-center text-[10px] text-slate-500 font-medium leading-tight">
-                                                            <div>{item.ticket || item.tickets || 0} <span className="text-[7px] text-slate-400 font-bold">Tkts</span></div>
-                                                            <div>{item.chat || 0} <span className="text-[7px] text-slate-400 font-bold">Chats</span></div>
-                                                        </td>
-                                                        <td className="py-1 px-2 text-center text-xs font-black text-slate-700">{totalQty.toLocaleString()}</td>
-                                                        <td className="py-1 px-2 text-center text-[10px] font-bold text-slate-500">{item.duration}</td>
+                                                        <td className="py-1 px-2 text-center text-sm font-black text-slate-800">{!isEmpty ? totalQty.toLocaleString() : '-'}</td>
+                                                        <td className="py-1 px-2 text-center text-xs font-bold text-slate-500">{item.duration}</td>
                                                         <td className="py-1 px-2 text-center">
-                                                            <span className={`text-[8.5px] font-black uppercase px-2 py-0.5 rounded-full inline-block ${
-                                                                item.impact === 'Crítico' ? 'bg-red-100 text-red-700' :
-                                                                item.impact === 'Urgente' ? 'bg-orange-100 text-orange-700' :
-                                                                item.impact === 'Normal' ? 'bg-blue-50 text-blue-600' :
-                                                                'bg-slate-50 text-slate-600'
-                                                            }`}>
-                                                                {item.impact}
-                                                            </span>
+                                                            {!isEmpty && (
+                                                                <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full inline-block leading-none ${
+                                                                    item.impact === 'Crítico' ? 'bg-red-100 text-red-700' :
+                                                                    item.impact === 'Urgente' ? 'bg-orange-100 text-orange-700' :
+                                                                    item.impact === 'Normal' ? 'bg-blue-50 text-blue-600' :
+                                                                    'bg-slate-100 text-slate-600'
+                                                                }`}>
+                                                                    {item.impact}
+                                                                </span>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 );
@@ -847,7 +830,6 @@
                                     </table>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 );
@@ -890,7 +872,6 @@
                             >
                                 <DownloadIcon size={16} /> {isExporting ? 'Renderizando...' : 'Exportar para Slide'}
                             </button>
-                            <button onClick={() => setIsExportCodeModalOpen(true)} className="flex items-center gap-2 bg-indigo-600 px-6 py-2.5 rounded-xl text-white hover:bg-indigo-800 font-black text-xs shadow-md transition-colors tracking-widest uppercase"><CodeIcon size={16} /> Exportar HTML</button>
                             <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-slate-900 px-6 py-2.5 rounded-xl text-white hover:bg-black font-black text-xs shadow-md transition-colors tracking-widest uppercase"><DatabaseIcon size={16} /> Editar Dados</button>
                         </div>
                     </div>
@@ -1144,69 +1125,83 @@
                                     {/* Editor para Principais Incidentes */}
                                     {activeTab === 'principais_incidentes' ? (
                                         <div className="grid grid-cols-1 gap-4 max-w-5xl mx-auto">
-                                            {data.principaisIncidentes.history.map((item, idx) => (
-                                                <div key={item.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center text-slate-800 font-bold">
-                                                    <div className="col-span-4">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Incidente</label>
-                                                        <input type="text" value={item.incident} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].incident = e.target.value;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                                            {/* Garantir que renderizamos 9 inputs no editor se houver */}
+                                            {(() => {
+                                                const history = [...data.principaisIncidentes.history].slice(0, 9);
+                                                while(history.length < 9) {
+                                                    history.push({ id: `temp-${history.length}`, incident: '', category: '', tickets: 0, chat: 0, duration: '', impact: 'Baixo' });
+                                                }
+                                                return history.map((item, idx) => (
+                                                    <div key={item.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center text-slate-800 font-bold">
+                                                        <div className="col-span-4">
+                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Incidente</label>
+                                                            <input type="text" value={item.incident} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                if(!newData.principaisIncidentes.history[idx]) newData.principaisIncidentes.history[idx] = {id: idx+1, incident: '', category: '', tickets: 0, chat: 0, duration: '', impact: 'Baixo'};
+                                                                newData.principaisIncidentes.history[idx].incident = e.target.value;
+                                                                setData(newData);
+                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                                                        </div>
+                                                        <div className="col-span-2">
+                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Categoria (Setor)</label>
+                                                            <input type="text" value={item.category} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                if(!newData.principaisIncidentes.history[idx]) newData.principaisIncidentes.history[idx] = {id: idx+1, incident: '', category: '', tickets: 0, chat: 0, duration: '', impact: 'Baixo'};
+                                                                newData.principaisIncidentes.history[idx].category = e.target.value;
+                                                                setData(newData);
+                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                                                        </div>
+                                                        <div className="col-span-1">
+                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Tickets</label>
+                                                            <input type="number" value={item.tickets || item.ticket || 0} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                if(!newData.principaisIncidentes.history[idx]) newData.principaisIncidentes.history[idx] = {id: idx+1, incident: '', category: '', tickets: 0, chat: 0, duration: '', impact: 'Baixo'};
+                                                                newData.principaisIncidentes.history[idx].tickets = parseInt(e.target.value) || 0;
+                                                                newData.principaisIncidentes.history[idx].ticket = parseInt(e.target.value) || 0;
+                                                                setData(newData);
+                                                            }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs text-center" />
+                                                        </div>
+                                                        <div className="col-span-1">
+                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Chat</label>
+                                                            <input type="number" value={item.chat || 0} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                if(!newData.principaisIncidentes.history[idx]) newData.principaisIncidentes.history[idx] = {id: idx+1, incident: '', category: '', tickets: 0, chat: 0, duration: '', impact: 'Baixo'};
+                                                                newData.principaisIncidentes.history[idx].chat = parseInt(e.target.value) || 0;
+                                                                setData(newData);
+                                                            }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs text-center" />
+                                                        </div>
+                                                        <div className="col-span-2">
+                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Duração</label>
+                                                            <input type="text" value={item.duration} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                if(!newData.principaisIncidentes.history[idx]) newData.principaisIncidentes.history[idx] = {id: idx+1, incident: '', category: '', tickets: 0, chat: 0, duration: '', impact: 'Baixo'};
+                                                                newData.principaisIncidentes.history[idx].duration = e.target.value;
+                                                                setData(newData);
+                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                                                        </div>
+                                                        <div className="col-span-2">
+                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Impacto</label>
+                                                            <select value={item.impact || 'Baixo'} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                if(!newData.principaisIncidentes.history[idx]) newData.principaisIncidentes.history[idx] = {id: idx+1, incident: '', category: '', tickets: 0, chat: 0, duration: '', impact: 'Baixo'};
+                                                                newData.principaisIncidentes.history[idx].impact = e.target.value;
+                                                                setData(newData);
+                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+                                                                <option value="Baixo">Baixo</option>
+                                                                <option value="Normal">Normal</option>
+                                                                <option value="Urgente">Urgente</option>
+                                                                <option value="Crítico">Crítico</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
-                                                    <div className="col-span-2">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Categoria (Setor)</label>
-                                                        <input type="text" value={item.category} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].category = e.target.value;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                    </div>
-                                                    <div className="col-span-1">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Tickets</label>
-                                                        <input type="number" value={item.tickets || item.ticket} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].tickets = parseInt(e.target.value) || 0;
-                                                            newData.principaisIncidentes.history[idx].ticket = parseInt(e.target.value) || 0; // fallback compatibility
-                                                            setData(newData);
-                                                        }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs text-center" />
-                                                    </div>
-                                                    <div className="col-span-1">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Chat</label>
-                                                        <input type="number" value={item.chat} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].chat = parseInt(e.target.value) || 0;
-                                                            setData(newData);
-                                                        }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs text-center" />
-                                                    </div>
-                                                    <div className="col-span-2">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Duração</label>
-                                                        <input type="text" value={item.duration} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].duration = e.target.value;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                    </div>
-                                                    <div className="col-span-2">
-                                                        <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Impacto</label>
-                                                        <select value={item.impact} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.history[idx].impact = e.target.value;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
-                                                            <option value="Baixo">Baixo</option>
-                                                            <option value="Normal">Normal</option>
-                                                            <option value="Urgente">Urgente</option>
-                                                            <option value="Crítico">Crítico</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                                ));
+                                            })()}
                                         </div>
                                     ) : null}
 
                                 </div>
                                 <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
+                                    <button onClick={handleOpenExportModal} className="px-8 py-2.5 rounded-lg text-indigo-700 bg-indigo-100 font-black shadow-sm flex items-center gap-2 hover:bg-indigo-200 uppercase text-xs transition-all"><CodeIcon size={18} /> Exportar HTML</button>
                                     <button onClick={() => setIsEditing(false)} className="px-8 py-2.5 rounded-lg text-slate-600 font-bold hover:bg-slate-200 uppercase text-xs">Cancelar</button>
                                     <button onClick={() => handleSave(data)} className="px-10 py-2.5 text-white rounded-lg font-black shadow-lg flex items-center gap-2 uppercase text-xs transition-all" style={{ backgroundColor: BRAND_GREEN }}><SaveIcon size={18} /> Salvar Tudo</button>
                                 </div>
