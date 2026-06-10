@@ -75,8 +75,8 @@
 
         const BRAND_GREEN = '#34ad61';
         const ACCENT_NAVY = '#1e293b';
-        // Chave v28 para forçar limpeza de cache do navegador e usar os dados novos
-        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v28'; 
+        // Chave atualizada para v29 para forçar nova estrutura de dados desacoplada
+        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v29'; 
         const apiKey = "";
 
         const INITIAL_DATA = {
@@ -151,12 +151,28 @@
                 ]
             },
             principaisIncidentes: {
+                // Nova estrutura: resumo (macro) e history (tabela)
+                resumo: {
+                    total: 1633,
+                    mapeados: 9,
+                    grupos: [
+                        { category: 'Sistema', quantidade: 881 },
+                        { category: 'Integrações', quantidade: 491 },
+                        { category: 'Fiscal', quantidade: 160 },
+                        { category: 'Certificado Digital', quantidade: 101 },
+                        { category: '', quantidade: 0 }
+                    ]
+                },
                 history: [
-                    { id: 1, incident: 'Instabilidade de Resposta Sefaz (Emissão NF-e)', category: 'Fiscal', tickets: 940, duration: '2h 15m', impact: 'Crítico' },
-                    { id: 2, incident: 'Lentidão nas APIs de Gateway de Pagamento', category: 'API', tickets: 655, duration: '1h 45m', impact: 'Urgente' },
-                    { id: 3, incident: 'Falha de Sincronização de Estoque ERP', category: 'ERP', tickets: 400, duration: '4h 10m', impact: 'Normal' },
-                    { id: 4, incident: 'Atraso no Processamento de Arquivos CNAB', category: 'Conta Digital', tickets: 200, duration: '6h 30m', impact: 'Baixo' },
-                    { id: 5, incident: 'Erro ao Carregar Relatórios do Painel', category: 'Minha Conta', tickets: 140, duration: '1h 15m', impact: 'Baixo' }
+                    { id: 1, incident: 'Lentidão no sistema', category: 'Sistema', tickets: 751, duration: '24h 26m', impact: 'Crítico' },
+                    { id: 2, incident: 'Dificuldade na Importação de pedidos de forma automática', category: 'Integrações', tickets: 188, duration: '26h 34m', impact: 'Crítico' },
+                    { id: 3, incident: 'Lentidão no sistema', category: 'Sistema', tickets: 130, duration: '2h 40m', impact: 'Crítico' },
+                    { id: 4, incident: 'Pedidos do Mercado Livre voltando pra "Em aberto" após faturam...', category: 'Integrações', tickets: 122, duration: '112h 31m', impact: 'Urgente' },
+                    { id: 5, incident: 'Comportamento inesperado na configuração do certificado digital', category: 'Certificado Digital', tickets: 101, duration: '27h 07m', impact: 'Urgente' },
+                    { id: 6, incident: 'Lentidão na importação de pedidos', category: 'Integrações', tickets: 92, duration: '19h 44m', impact: 'Urgente' },
+                    { id: 7, incident: 'Dificuldades na utilização da Gestão de anúncios do Mercado Liv...', category: 'Integrações', tickets: 89, duration: '115h 57m', impact: 'Urgente' },
+                    { id: 8, incident: 'Instabilidade Sefaz de MG', category: 'Fiscal', tickets: 83, duration: '21h 19m', impact: 'Normal' },
+                    { id: 9, incident: 'Instabilidade Temporária na Tela de Notas Fiscais', category: 'Fiscal', tickets: 77, duration: '00h 47m', impact: 'Crítico' }
                 ]
             }
         };
@@ -164,7 +180,14 @@
         const App = () => {
             const [data, setData] = React.useState(() => {
                 const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (saved) return JSON.parse(saved);
+                if (saved) {
+                    let parsed = JSON.parse(saved);
+                    // Fallback para não quebrar dados antigos
+                    if (!parsed.principaisIncidentes.resumo) {
+                        parsed.principaisIncidentes.resumo = INITIAL_DATA.principaisIncidentes.resumo;
+                    }
+                    return parsed;
+                }
                 return INITIAL_DATA;
             });
             const [activeTab, setActiveTab] = React.useState('segmentos_share');
@@ -736,28 +759,24 @@
             };
 
             const renderTabPrincipaisIncidentes = () => {
+                const resumo = data.principaisIncidentes.resumo || INITIAL_DATA.principaisIncidentes.resumo;
                 const history = data.principaisIncidentes.history;
-                const totalTicketsAfetados = history.reduce((acc, curr) => acc + curr.tickets, 0);
-                const numOfensores = history.length;
                 
-                const categoryAggregation = history.reduce((acc, item) => {
-                    const existing = acc.find(x => x.category === item.category);
-                    if (existing) {
-                        existing.quantidade += item.tickets;
-                    } else {
-                        acc.push({ category: item.category, grandfather: BRAND_GREEN, quantidade: item.tickets });
-                    }
-                    return acc;
-                }, []);
+                const totalTicketsAfetados = resumo.total;
+                const numOfensores = resumo.mapeados;
+                
+                // Filtra grupos em branco e ordena os que foram preenchidos
+                const categoryAggregation = [...resumo.grupos]
+                    .filter(g => g.category && g.category.trim() !== '')
+                    .sort((a, b) => b.quantidade - a.quantidade);
 
-                categoryAggregation.sort((a, b) => b.quantidade - a.quantidade);
                 const mediaQuantidade = numOfensores > 0 ? (totalTicketsAfetados / numOfensores).toFixed(0) : 0;
-                const maxOfensorGroup = categoryAggregation[0] || { category: 'N/A', quantidade: 0 };
+                const maxOfensorGroup = categoryAggregation[0] || { category: '-', quantidade: 0 };
                 const maxOfensorLabel = `${maxOfensorGroup.category} (${maxOfensorGroup.quantidade})`;
 
-                const paddedHistory = [...history];
+                const paddedHistory = [...history].slice(0, 9);
                 while(paddedHistory.length < 9) {
-                    paddedHistory.push({ id: `empty-${paddedHistory.length}`, incident: '-', category: '-', tickets: 0, duration: '-', impact: '-' });
+                    paddedHistory.push({ id: `empty-${paddedHistory.length}`, incident: '-', category: '-', tickets: 0, duration: '-', impact: 'Baixo' });
                 }
 
                 return (
@@ -823,7 +842,8 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {paddedHistory.slice(0, 9).map((item, idx) => {
+                                            {paddedHistory.map((item, idx) => {
+                                                const totalQty = (item.chat || 0) + (item.ticket || 0) + (item.tickets || 0);
                                                 const isEmpty = item.incident === '-';
                                                 return (
                                                     <tr key={`inc-${idx}`} className="border-b border-slate-100 last:border-b-0">
@@ -831,7 +851,7 @@
                                                             <div className="font-bold text-slate-700 text-sm leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[420px]" title={item.incident}>{item.incident}</div>
                                                             {!isEmpty && <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md inline-block mt-0.5">{item.category}</span>}
                                                         </td>
-                                                        <td className="py-1 px-2 text-center text-sm font-black text-slate-800">{!isEmpty ? item.tickets.toLocaleString() : '-'}</td>
+                                                        <td className="py-1 px-2 text-center text-sm font-black text-slate-800">{!isEmpty ? totalQty.toLocaleString() : '-'}</td>
                                                         <td className="py-1 px-2 text-center text-xs font-bold text-slate-500">{item.duration}</td>
                                                         <td className="py-1 px-2 text-center">
                                                             {!isEmpty && (
@@ -896,6 +916,7 @@
                             >
                                 <DownloadIcon size={16} /> {isExporting ? 'Renderizando...' : 'Exportar para Slide'}
                             </button>
+                            <button onClick={() => setIsExportCodeModalOpen(true)} className="flex items-center gap-2 bg-indigo-600 px-6 py-2.5 rounded-xl text-white hover:bg-indigo-800 font-black text-xs shadow-md transition-colors tracking-widest uppercase"><CodeIcon size={16} /> Exportar HTML</button>
                             <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-slate-900 px-6 py-2.5 rounded-xl text-white hover:bg-black font-black text-xs shadow-md transition-colors tracking-widest uppercase"><DatabaseIcon size={16} /> Editar Dados</button>
                         </div>
                     </div>
@@ -1146,67 +1167,118 @@
                                         );
                                     })() : null}
 
-                                    {/* Editor para Principais Incidentes */}
+                                    {/* Editor para Principais Incidentes (Nova Estrutura Desacoplada) */}
                                     {activeTab === 'principais_incidentes' ? (
-                                        <div className="grid grid-cols-1 gap-4 max-w-5xl mx-auto">
-                                            {(() => {
-                                                const history = [...data.principaisIncidentes.history].slice(0, 9);
-                                                while(history.length < 9) {
-                                                    history.push({ id: `temp-${history.length}`, incident: '', category: '', tickets: 0, duration: '', impact: 'Baixo' });
-                                                }
-                                                return history.map((item, idx) => (
-                                                    <div key={item.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center text-slate-800 font-bold">
-                                                        <div className="col-span-5">
-                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Incidente</label>
-                                                            <input type="text" value={item.incident} onChange={(e) => {
-                                                                const newData = {...data};
-                                                                if(!newData.principaisIncidentes.history[idx]) {
-                                                                    newData.principaisIncidentes.history.push({id: `inc-${Date.now()}`, incident:'', category:'', tickets:0, duration:'', impact:'Baixo'});
-                                                                }
-                                                                newData.principaisIncidentes.history[idx].incident = e.target.value;
-                                                                setData(newData);
-                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Categoria (Setor)</label>
-                                                            <input type="text" value={item.category} onChange={(e) => {
-                                                                const newData = {...data};
-                                                                newData.principaisIncidentes.history[idx].category = e.target.value;
-                                                                setData(newData);
-                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                        </div>
-                                                        <div className="col-span-1">
-                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Quantidade</label>
-                                                            <input type="number" value={item.tickets} onChange={(e) => {
-                                                                const newData = {...data};
-                                                                newData.principaisIncidentes.history[idx].tickets = parseInt(e.target.value) || 0;
-                                                                setData(newData);
-                                                            }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs text-center" />
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Duração</label>
-                                                            <input type="text" value={item.duration} onChange={(e) => {
-                                                                const newData = {...data};
-                                                                newData.principaisIncidentes.history[idx].duration = e.target.value;
-                                                                setData(newData);
-                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Impacto</label>
-                                                            <select value={item.impact} onChange={(e) => {
-                                                                const newData = {...data};
-                                                                newData.principaisIncidentes.history[idx].impact = e.target.value;
-                                                                setData(newData);
-                                                            }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
-                                                                <option value="Crítico">Crítico</option>
-                                                                <option value="Urgente">Urgente</option>
-                                                                <option value="Normal">Normal</option>
-                                                                <option value="Baixo">Baixo</option>
-                                                            </select>
-                                                        </div>
+                                        <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
+                                            {/* Resumo Consolidado (Macro) */}
+                                            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                                                <h3 className="font-black text-slate-700 uppercase mb-4 text-[11px] tracking-widest text-center border-b border-slate-200 pb-2">Dados Consolidados (Cards e Gráfico Verde)</h3>
+                                                
+                                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                                    <div className="bg-white p-3 rounded-lg border border-slate-200">
+                                                        <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Volume Total no Mês</label>
+                                                        <input type="number" value={data.principaisIncidentes.resumo?.total} onChange={(e) => {
+                                                            const newData = {...data};
+                                                            newData.principaisIncidentes.resumo.total = parseInt(e.target.value) || 0;
+                                                            setData(newData);
+                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold" />
                                                     </div>
-                                                ));
-                                            })()}
+                                                    <div className="bg-white p-3 rounded-lg border border-slate-200">
+                                                        <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Ofensores Mapeados</label>
+                                                        <input type="number" value={data.principaisIncidentes.resumo?.mapeados} onChange={(e) => {
+                                                            const newData = {...data};
+                                                            newData.principaisIncidentes.resumo.mapeados = parseInt(e.target.value) || 0;
+                                                            setData(newData);
+                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold" />
+                                                    </div>
+                                                </div>
+
+                                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-2 mt-4">Top Grupos Ofensores (Aparecem no Gráfico de Barras)</label>
+                                                <div className="grid grid-cols-5 gap-3">
+                                                    {[0, 1, 2, 3, 4].map(idx => (
+                                                        <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200">
+                                                            <span className="block text-[9px] font-black text-slate-300 mb-2 text-right">#{idx+1}</span>
+                                                            <input type="text" placeholder="Nome do Grupo" value={data.principaisIncidentes.resumo?.grupos[idx]?.category || ''} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                if(!newData.principaisIncidentes.resumo.grupos[idx]) newData.principaisIncidentes.resumo.grupos[idx] = {category:'', quantidade:0};
+                                                                newData.principaisIncidentes.resumo.grupos[idx].category = e.target.value;
+                                                                setData(newData);
+                                                            }} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs mb-2 font-semibold" />
+                                                            <input type="number" placeholder="Quantidade" value={data.principaisIncidentes.resumo?.grupos[idx]?.quantidade || ''} onChange={(e) => {
+                                                                const newData = {...data};
+                                                                if(!newData.principaisIncidentes.resumo.grupos[idx]) newData.principaisIncidentes.resumo.grupos[idx] = {category:'', quantidade:0};
+                                                                newData.principaisIncidentes.resumo.grupos[idx].quantidade = parseInt(e.target.value) || 0;
+                                                                setData(newData);
+                                                            }} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs font-bold" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Lista de Detalhamento Individual (Os 9 da Tabela) */}
+                                            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                                                <h3 className="font-black text-slate-700 uppercase mb-4 text-[11px] tracking-widest text-center border-b border-slate-200 pb-2">Detalhamento Individual (Aparecem na Tabela de 9 Linhas)</h3>
+                                                <div className="grid grid-cols-1 gap-3">
+                                                    {(() => {
+                                                        const history = [...data.principaisIncidentes.history].slice(0, 9);
+                                                        while(history.length < 9) {
+                                                            history.push({ id: `temp-${history.length}`, incident: '', category: '', tickets: 0, duration: '', impact: 'Baixo' });
+                                                        }
+                                                        return history.map((item, idx) => (
+                                                            <div key={item.id} className="p-4 bg-white rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center text-slate-800 font-bold">
+                                                                <div className="col-span-5">
+                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Incidente</label>
+                                                                    <input type="text" value={item.incident} onChange={(e) => {
+                                                                        const newData = {...data};
+                                                                        if(!newData.principaisIncidentes.history[idx]) {
+                                                                            newData.principaisIncidentes.history.push({id: `inc-${Date.now()}`, incident:'', category:'', tickets:0, duration:'', impact:'Baixo'});
+                                                                        }
+                                                                        newData.principaisIncidentes.history[idx].incident = e.target.value;
+                                                                        setData(newData);
+                                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                                                                </div>
+                                                                <div className="col-span-2">
+                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Categoria (Setor)</label>
+                                                                    <input type="text" value={item.category} onChange={(e) => {
+                                                                        const newData = {...data};
+                                                                        newData.principaisIncidentes.history[idx].category = e.target.value;
+                                                                        setData(newData);
+                                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                                                                </div>
+                                                                <div className="col-span-1">
+                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Quantidade</label>
+                                                                    <input type="number" value={item.tickets} onChange={(e) => {
+                                                                        const newData = {...data};
+                                                                        newData.principaisIncidentes.history[idx].tickets = parseInt(e.target.value) || 0;
+                                                                        setData(newData);
+                                                                    }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs text-center" />
+                                                                </div>
+                                                                <div className="col-span-2">
+                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Duração</label>
+                                                                    <input type="text" value={item.duration} onChange={(e) => {
+                                                                        const newData = {...data};
+                                                                        newData.principaisIncidentes.history[idx].duration = e.target.value;
+                                                                        setData(newData);
+                                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
+                                                                </div>
+                                                                <div className="col-span-2">
+                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Impacto</label>
+                                                                    <select value={item.impact} onChange={(e) => {
+                                                                        const newData = {...data};
+                                                                        newData.principaisIncidentes.history[idx].impact = e.target.value;
+                                                                        setData(newData);
+                                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
+                                                                        <option value="Crítico">Crítico</option>
+                                                                        <option value="Urgente">Urgente</option>
+                                                                        <option value="Normal">Normal</option>
+                                                                        <option value="Baixo">Baixo</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        ));
+                                                    })()}
+                                                </div>
+                                            </div>
                                         </div>
                                     ) : null}
 
