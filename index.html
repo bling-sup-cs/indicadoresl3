@@ -46,20 +46,11 @@
         .recharts-text {
             font-family: 'Roboto', sans-serif !important;
         }
-        
-        /* Estilo para travar o alinhamento dos números nos cards da exportação */
-        .card-number-box {
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <!-- ATENÇÃO: ID adicionado à tag script para o motor de compilação funcionar -->
     <script id="app-code" type="text/babel">
         // --- ÍCONES SVG ---
         const DatabaseIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>);
@@ -75,8 +66,8 @@
 
         const BRAND_GREEN = '#34ad61';
         const ACCENT_NAVY = '#1e293b';
-        // Chave atualizada para forçar nova estrutura de dados
-        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v31'; 
+        // Atualizado para v34 para garantir a limpeza do cache e aplicação do layout block
+        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v34'; 
         const apiKey = "";
 
         const INITIAL_DATA = {
@@ -151,26 +142,23 @@
                 ]
             },
             principaisIncidentes: {
-                // Nova estrutura: resumo (macro) e history (tabela)
-                resumo: {
-                    total: 2406,
-                    mapeados: 33,
-                    grupos: [
-                        { category: 'Sistema', quantidade: 930 },
-                        { category: 'Integrações', quantidade: 718 },
-                        { category: 'Fiscal', quantidade: 357 },
-                        { category: 'Certificado Digital', quantidade: 101 },
-                        { category: '', quantidade: 0 }
-                    ]
-                },
+                totalVolumeMes: 2406,
+                totalOfensoresMes: 33,
+                topGrupos: [
+                    { category: 'Sistema', quantidade: 930 },
+                    { category: 'Integrações', quantidade: 718 },
+                    { category: 'Fiscal', quantidade: 357 },
+                    { category: 'Certificado Digital', quantidade: 101 },
+                    { category: 'Nome do Grupo', quantidade: 0 }
+                ],
                 history: [
                     { id: 1, incident: 'Lentidão no sistema', category: 'Sistema', origin: 'Interno', tickets: 751, duration: '24h 26m', impact: 'Crítico' },
                     { id: 2, incident: 'Dificuldade na Importação de pedidos de forma automática', category: 'Integrações', origin: 'Interno', tickets: 188, duration: '26h 34m', impact: 'Crítico' },
                     { id: 3, incident: 'Lentidão no sistema', category: 'Sistema', origin: 'Interno', tickets: 130, duration: '2h 40m', impact: 'Crítico' },
-                    { id: 4, incident: 'Pedidos do Mercado Livre voltando pra "Em aberto" após faturam...', category: 'Integrações', origin: 'Interno', tickets: 122, duration: '112h 31m', impact: 'Urgente' },
+                    { id: 4, incident: 'Pedidos do Mercado Livre voltando pra "Em aberto" após faturamento', category: 'Integrações', origin: 'Interno', tickets: 122, duration: '112h 31m', impact: 'Urgente' },
                     { id: 5, incident: 'Comportamento inesperado na configuração do certificado digital', category: 'Certificado Digital', origin: 'Interno', tickets: 101, duration: '27h 07m', impact: 'Urgente' },
                     { id: 6, incident: 'Lentidão na importação de pedidos', category: 'Integrações', origin: 'Interno', tickets: 92, duration: '19h 44m', impact: 'Urgente' },
-                    { id: 7, incident: 'Dificuldades na utilização da Gestão de anúncios do Mercado Liv...', category: 'Integrações', origin: 'Externo', tickets: 89, duration: '115h 57m', impact: 'Urgente' },
+                    { id: 7, incident: 'Dificuldades na utilização da Gestão de anúncios do Mercado Livre', category: 'Integrações', origin: 'Externo', tickets: 89, duration: '115h 57m', impact: 'Urgente' },
                     { id: 8, incident: 'Instabilidade Sefaz de MG', category: 'Fiscal', origin: 'Externo', tickets: 83, duration: '21h 19m', impact: 'Normal' },
                     { id: 9, incident: 'Instabilidade Temporária na Tela de Notas Fiscais', category: 'Fiscal', origin: 'Interno', tickets: 77, duration: '00h 47m', impact: 'Crítico' }
                 ]
@@ -180,14 +168,7 @@
         const App = () => {
             const [data, setData] = React.useState(() => {
                 const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (saved) {
-                    let parsed = JSON.parse(saved);
-                    // Fallback para não quebrar dados antigos
-                    if (!parsed.principaisIncidentes.resumo) {
-                        parsed.principaisIncidentes.resumo = INITIAL_DATA.principaisIncidentes.resumo;
-                    }
-                    return parsed;
-                }
+                if (saved) return JSON.parse(saved);
                 return INITIAL_DATA;
             });
             const [activeTab, setActiveTab] = React.useState('segmentos_share');
@@ -270,7 +251,7 @@
                     dataContext = data.incidentes.history.map(h => `- ${h.month}: Incidentes ${h.incidentes}, Tickets ${h.tickets}, Repres. ${h.representatividade}%`).join('\n');
                     labelType = "gestão de incidentes críticos";
                 } else {
-                    dataContext = data.principaisIncidentes.history.map(h => `- ${h.incident} (Origem: ${h.origin || 'N/A'}): Quantidade ${h.tickets}, Duração ${h.duration}, Impacto ${h.impact}`).join('\n');
+                    dataContext = data.principaisIncidentes.history.map(h => `- ${h.incident}: Quantidade ${h.tickets}, Duração ${h.duration}, Impacto ${h.impact}`).join('\n');
                     labelType = "principais ofensores operacionais de incidentes";
                 }
 
@@ -330,7 +311,6 @@
                 setData(newData);
             };
 
-            // Função segura para gerar o HTML do Dashboard sem quebrar o interpretador
             const getFullHTMLString = () => {
                 const scriptElement = document.getElementById('app-code');
                 if (!scriptElement) return "Erro ao carregar código original.";
@@ -365,7 +345,6 @@
         @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         .recharts-text { font-family: 'Roboto', sans-serif !important; }
-        .card-number-box { line-height: 1; display: flex; align-items: center; justify-content: flex-end; }
     </style>`;
 
                 return `<!DOCTYPE html>\n<html lang="pt-br">\n<head>${headSection}\n</head>\n<body>\n    <div id="root"></div>\n\n    ${sOpen} id="app-code" type="text/babel">\n${updatedCode}\n    ${sClose}\n</body>\n</html>`;
@@ -457,12 +436,10 @@
                     <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
                         <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-[75px]">
                             {top4.map((seg, i) => (
-                                <div key={seg.id} className="flex-1 border-r last:border-0 border-slate-100 flex items-center justify-center no-break px-4">
-                                    <div className="text-left mr-3 flex flex-col justify-center">
-                                        <div className="text-[11px] font-black text-slate-500 uppercase leading-none">Top {i+1}: {seg.name}</div>
-                                        <div className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 leading-none">Média do Período</div>
-                                    </div>
-                                    <div className="text-[28px] font-black card-value tracking-tighter" style={{ color: colors[seg.id], lineHeight: '1' }}>{seg.history[seg.history.length-1].share}%</div>
+                                <div key={seg.id} className="flex-1 border-r last:border-0 border-slate-100 flex flex-col justify-center items-center text-center">
+                                    <div className="text-[11px] font-black text-slate-500 uppercase leading-none mb-1">Top {i+1}: {seg.name}</div>
+                                    <div className="text-[9px] font-bold text-slate-400 uppercase leading-none mb-2">Média do Período</div>
+                                    <div className="text-[28px] font-black leading-none" style={{ color: colors[seg.id] }}>{seg.history[seg.history.length-1].share}%</div>
                                 </div>
                             ))}
                         </div>
@@ -471,19 +448,14 @@
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={chartData} margin={{ top: 30, right: 55, left: 55, bottom: 40 }}>
                                         <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" strokeOpacity={0.4} />
-                                        
                                         <XAxis dataKey="month" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 13, fill: '#64748b', fontWeight: 700}} dy={20} padding={{ left: 30, right: 30 }} />
-                                        
                                         <YAxis scale="sqrt" domain={[0, 42]} ticks={shareTicks} tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748b', fontWeight: 600}} allowDataOverflow />
-                                        
                                         <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', fontWeight: 'bold' }} />
-                                        
                                         {visibleSegments.map(seg => (
                                             <Line key={seg.id} type="monotone" dataKey={seg.id} stroke={colors[seg.id]} strokeWidth={2.5} dot={{ r: 4, fill: 'white', strokeWidth: 2, stroke: colors[seg.id] }} isAnimationActive={false}>
                                                 <LabelList dataKey={seg.id} content={(props) => {
                                                     const { x, y, value, index } = props;
                                                     let dy = 0, anchor = "middle";
-
                                                     if (index === 0) anchor = "start"; 
                                                     if (index === chartData.length-1) anchor = "end";
 
@@ -512,7 +484,7 @@
                                 </ResponsiveContainer>
                             </div>
                             
-                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100 legend-row whitespace-nowrap overflow-hidden">
+                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100 whitespace-nowrap overflow-hidden">
                                 {data.segmentos.map(seg => (
                                     <button key={seg.id} onClick={() => toggleSegmentVisibility(seg.id)} className={`mx-2 bg-transparent border-none p-0 transition-all inline-block ${hiddenSegments.includes(seg.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
                                         <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: colors[seg.id], verticalAlign: 'middle', marginRight: '4px' }}></span>
@@ -534,13 +506,13 @@
                     <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
                         <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-[75px]">
                             {levels.map(level => (
-                                <div key={level.id} className="flex-1 border-r last:border-0 border-slate-100 flex items-center px-5 py-3 export-card-row">
+                                <div key={level.id} className="flex-1 border-r last:border-0 border-slate-100 flex items-center px-5 py-3">
                                     <div className="flex-grow flex flex-col justify-center min-w-0 pr-2 text-left">
-                                        <div className="text-[12px] font-black text-slate-500 uppercase tracking-tight leading-none">{level.label}</div>
-                                        <div className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 leading-none whitespace-nowrap">Média do Período</div>
+                                        <div className="text-[12px] font-black text-slate-500 uppercase leading-none">{level.label}</div>
+                                        <div className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 leading-none">Média do Período</div>
                                     </div>
                                     <div className="w-[110px] flex-shrink-0 flex items-center justify-end">
-                                        <div className="text-[32px] font-black card-value tracking-tighter" style={{ color: level.color, lineHeight: '1' }}>
+                                        <div className="text-[32px] font-black" style={{ color: level.color, lineHeight: '1' }}>
                                             {(history.reduce((a, c) => a + c[level.id], 0) / history.length).toFixed(1)}%
                                         </div>
                                     </div>
@@ -575,7 +547,7 @@
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
-                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100 legend-row whitespace-nowrap">
+                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100 whitespace-nowrap">
                                 {levels.map(lvl => (
                                     <button key={lvl.id} onClick={() => toggleNivelVisibility(lvl.id)} className={`mx-4 transition-all duration-200 cursor-pointer bg-transparent border-none p-0 inline-block ${hiddenNiveis.includes(lvl.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
                                         <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: lvl.color, verticalAlign: 'middle', marginRight: '8px' }}></span>
@@ -597,12 +569,12 @@
                     <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
                         <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-[75px]">
                             {types.map(type => (
-                                <div key={type.id} className="flex-1 border-r last:border-0 border-slate-100 flex items-center justify-center no-break py-3 px-6 export-card-row">
+                                <div key={type.id} className="flex-1 border-r last:border-0 border-slate-100 flex items-center justify-center py-3 px-6">
                                     <div className="text-left flex flex-col justify-center">
-                                        <div className="text-[12px] font-black text-slate-500 uppercase leading-normal">{type.label}</div>
-                                        <div className="text-[9px] font-bold text-slate-400 uppercase leading-normal">Média do Período</div>
+                                        <div className="text-[12px] font-black text-slate-500 uppercase leading-none mb-1.5">{type.label}</div>
+                                        <div className="text-[9px] font-bold text-slate-400 uppercase leading-none">Média do Período</div>
                                     </div>
-                                    <div className="ml-auto text-[32px] font-black card-value" style={{ color: type.color, lineHeight: '1.2' }}>{(history.reduce((a, c) => a + c[type.id], 0) / history.length).toFixed(1)}%</div>
+                                    <div className="ml-auto text-[32px] font-black" style={{ color: type.color, lineHeight: '1' }}>{(history.reduce((a, c) => a + c[type.id], 0) / history.length).toFixed(1)}%</div>
                                 </div>
                             ))}
                         </div>
@@ -633,7 +605,7 @@
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
-                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100 legend-row whitespace-nowrap">
+                            <div className="text-center mt-2 shrink-0 py-3 border-t border-slate-100 whitespace-nowrap">
                                 {types.map(type => (
                                     <button key={type.id} onClick={() => toggleTipoVisibility(type.id)} className={`mx-4 transition-all duration-200 cursor-pointer bg-transparent border-none p-0 inline-block ${hiddenTipos.includes(type.id) ? 'opacity-30 grayscale' : 'opacity-100 hover:scale-105'}`}>
                                         <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', backgroundColor: type.color, verticalAlign: 'middle', marginRight: '8px' }}></span>
@@ -651,32 +623,32 @@
                 const current = history[history.length - 1];
                 return (
                     <div className="flex-grow flex flex-col gap-6 pb-4 min-h-0">
-                        <div className="grid grid-cols-3 gap-6 shrink-0">
-                            <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
+                        <div className="grid grid-cols-3 gap-6 shrink-0 h-[100px]">
+                            <div className="bg-white rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center text-center shadow-sm h-full">
                                 <span className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-2 leading-none">Clientes Ativos ({latestMonthName})</span>
                                 <span className="text-4xl font-black text-slate-800 leading-none">{current.clientes.toLocaleString('pt-BR')}</span>
                             </div>
-                            <div className="bg-white p-6 rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
+                            <div className="bg-white rounded-2xl border-2 border-slate-200 flex flex-col items-center justify-center text-center shadow-sm h-full">
                                 <span className="text-slate-400 font-bold uppercase text-xs tracking-widest mb-2 leading-none">Atendimentos ({latestMonthName})</span>
                                 <span className="text-4xl font-black text-slate-800 leading-none">{current.volume.toLocaleString('pt-BR')}</span>
                             </div>
-                            <div className="bg-emerald-50 p-6 rounded-2xl border-2 border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm">
+                            <div className="bg-emerald-50 rounded-2xl border-2 border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm h-full">
                                 <span className="text-emerald-600 font-bold uppercase text-xs tracking-widest mb-2 leading-none">Taxa de Contato ({latestMonthName})</span>
                                 <span className="text-5xl font-black text-emerald-600 leading-none">{Number(current.contactRate).toFixed(2).replace('.', ',')}%</span>
                             </div>
                         </div>
                         <div className="flex-grow grid grid-cols-2 gap-6 min-h-0">
-                            <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 flex flex-col shadow-sm overflow-visible min-h-0 min-w-0">
+                            <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 flex flex-col shadow-sm overflow-visible min-h-0">
                                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-2 text-center leading-none">Clientes ativos e Atendimentos</h3>
                                 <div className="flex justify-center gap-6 mb-4 text-[10px] font-bold text-slate-500 uppercase">
                                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-400 rounded-sm"></div> Clientes ativos</div>
                                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-sm"></div> Atendimentos</div>
                                 </div>
-                                <div className="flex-grow w-full min-h-0 h-full relative"><ResponsiveContainer width="100%" height="100%"><BarChart data={history} margin={{ top: 25, right: 10, left: 10, bottom: 0 }}><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.25]} /><Bar dataKey="clientes" fill="#94a3b8" radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="clientes" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: '#64748b', fontWeight: 700 }} offset={5} /></Bar><Bar dataKey="volume" fill={BRAND_GREEN} radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="volume" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: BRAND_GREEN, fontWeight: 700 }} offset={5} /></Bar></BarChart></ResponsiveContainer></div>
+                                <div className="flex-grow w-full min-h-0"><ResponsiveContainer width="100%" height="100%"><BarChart data={history} margin={{ top: 25, right: 10, left: 10, bottom: 0 }}><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.25]} /><Bar dataKey="clientes" fill="#94a3b8" radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="clientes" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: '#64748b', fontWeight: 700 }} offset={5} /></Bar><Bar dataKey="volume" fill={BRAND_GREEN} radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="volume" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: BRAND_GREEN, fontWeight: 700 }} offset={5} /></Bar></BarChart></ResponsiveContainer></div>
                             </div>
-                            <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 flex flex-col shadow-sm overflow-visible min-h-0 min-w-0">
+                            <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 flex flex-col shadow-sm overflow-visible min-h-0">
                                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-6 text-center mt-2 leading-none">Taxa de Contato</h3>
-                                <div className="flex-grow w-full min-h-0 h-full relative"><ResponsiveContainer width="100%" height="100%"><AreaChart data={history} margin={{ top: 25, right: 25, left: 25, bottom: 0 }}><defs><linearGradient id="colorContact" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={BRAND_GREEN} stopOpacity={0.35}/><stop offset="95%" stopColor={BRAND_GREEN} stopOpacity={0}/></linearGradient></defs><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.3]} /><Area type="monotone" dataKey="contactRate" stroke={BRAND_GREEN} strokeWidth={4} fill="url(#colorContact)" dot={{ r: 5, fill: 'white', stroke: BRAND_GREEN, strokeWidth: 3 }} isAnimationActive={false}><LabelList dataKey="contactRate" position="top" formatter={v => `${Number(v).toFixed(2).replace('.', ',')}%`} style={{ fontSize: '12px', fill: BRAND_GREEN, fontWeight: 900 }} offset={15} /></Area></AreaChart></ResponsiveContainer></div>
+                                <div className="flex-grow w-full min-h-0"><ResponsiveContainer width="100%" height="100%"><AreaChart data={history} margin={{ top: 25, right: 25, left: 25, bottom: 0 }}><defs><linearGradient id="colorContact" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={BRAND_GREEN} stopOpacity={0.35}/><stop offset="95%" stopColor={BRAND_GREEN} stopOpacity={0}/></linearGradient></defs><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.3]} /><Area type="monotone" dataKey="contactRate" stroke={BRAND_GREEN} strokeWidth={4} fill="url(#colorContact)" dot={{ r: 5, fill: 'white', stroke: BRAND_GREEN, strokeWidth: 3 }} isAnimationActive={false}><LabelList dataKey="contactRate" position="top" formatter={v => `${Number(v).toFixed(2).replace('.', ',')}%`} style={{ fontSize: '12px', fill: BRAND_GREEN, fontWeight: 900 }} offset={15} /></Area></AreaChart></ResponsiveContainer></div>
                             </div>
                         </div>
                     </div>
@@ -693,28 +665,28 @@
                 return (
                     <div className="flex-grow flex flex-col gap-3 pb-0 min-h-0">
                         <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-[75px]">
-                            <div className="flex-1 border-r border-slate-100 flex items-center justify-center no-break">
+                            <div className="flex-1 border-r border-slate-100 flex items-center justify-center">
                                 <div className="text-left mr-3 flex flex-col justify-center"><div className="text-[11px] font-black text-slate-500 uppercase leading-none">INCIDENTES</div><div className="text-[9px] font-bold text-slate-400 uppercase mt-1 leading-none">MÉDIA MENSAL</div></div>
-                                <div className="text-[28px] font-black card-value" style={{ color: '#ef4444', lineHeight: '1' }}>{avgInc}</div>
+                                <div className="text-[28px] font-black" style={{ color: '#ef4444', lineHeight: '1' }}>{avgInc}</div>
                             </div>
-                            <div className="flex-1 border-r border-slate-100 flex items-center justify-center no-break">
+                            <div className="flex-1 border-r border-slate-100 flex items-center justify-center">
                                 <div className="text-left mr-3 flex flex-col justify-center"><div className="text-[11px] font-black text-slate-500 uppercase leading-none">TICKETS VINC.</div><div className="text-[9px] font-bold text-slate-400 uppercase mt-1 leading-none">MÉDIA MENSAL</div></div>
-                                <div className="text-[28px] font-black card-value" style={{ color: '#94a3b8', lineHeight: '1' }}>{avgTickets}</div>
+                                <div className="text-[28px] font-black" style={{ color: '#94a3b8', lineHeight: '1' }}>{avgTickets}</div>
                             </div>
-                            <div className="flex-1 border-r border-slate-100 flex items-center justify-center no-break">
+                            <div className="flex-1 border-r border-slate-100 flex items-center justify-center">
                                 <div className="text-left mr-3 flex flex-col justify-center"><div className="text-[11px] font-black text-slate-500 uppercase leading-none">REPRESENT. %</div><div className="text-[9px] font-bold text-slate-400 uppercase mt-1 leading-none">MÉDIA MENSAL</div></div>
-                                <div className="text-[28px] font-black card-value" style={{ color: ACCENT_NAVY, lineHeight: '1' }}>{avgRep}%</div>
+                                <div className="text-[28px] font-black" style={{ color: ACCENT_NAVY, lineHeight: '1' }}>{avgRep}%</div>
                             </div>
-                            <div className="flex-1 flex items-center justify-center no-break">
+                            <div className="flex-1 flex items-center justify-center">
                                 <div className="text-left mr-3 flex flex-col justify-center"><div className="text-[11px] font-black text-slate-500 uppercase leading-none">INTERNOS %</div><div className="text-[9px] font-bold text-slate-400 uppercase mt-1 leading-none">MÉDIA MENSAL</div></div>
-                                <div className="text-[28px] font-black card-value" style={{ color: BRAND_GREEN, lineHeight: '1' }}>{avgInt}%</div>
+                                <div className="text-[28px] font-black" style={{ color: BRAND_GREEN, lineHeight: '1' }}>{avgInt}%</div>
                             </div>
                         </div>
 
                         <div className="flex-grow grid grid-cols-2 gap-4 min-h-0">
-                            <div className="bg-white rounded-xl border-2 border-slate-200 p-4 flex flex-col shadow-sm overflow-visible min-h-0 min-w-0">
+                            <div className="bg-white rounded-xl border-2 border-slate-200 p-4 flex flex-col shadow-sm overflow-visible min-h-0">
                                 <h3 className="text-xs font-black uppercase text-slate-500 mb-4 tracking-tighter leading-none">Volume de Incidentes e Impacto na Operação</h3>
-                                <div className="flex-grow w-full min-h-0 h-full relative">
+                                <div className="flex-grow w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <ComposedChart data={history} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -728,15 +700,15 @@
                                         </ComposedChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <div className="flex justify-center gap-6 mt-4 text-[10px] font-bold text-slate-500 uppercase legend-row">
-                                    <div className="legend-item-print"><div className="w-3 h-3 bg-slate-400 rounded-full inline-block align-middle mr-1"></div> Tickets Vinculados</div>
-                                    <div className="legend-item-print" style={{marginLeft:'15px'}}><div className="w-3 h-3 bg-red-500 rounded-full inline-block align-middle mr-1"></div> Incidentes Criados</div>
+                                <div className="flex justify-center gap-6 mt-4 text-[10px] font-bold text-slate-500 uppercase">
+                                    <div><div className="w-3 h-3 bg-slate-400 rounded-full inline-block align-middle mr-1"></div> Tickets Vinculados</div>
+                                    <div style={{marginLeft:'15px'}}><div className="w-3 h-3 bg-red-500 rounded-full inline-block align-middle mr-1"></div> Incidentes Criados</div>
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-xl border-2 border-slate-200 p-4 flex flex-col shadow-sm overflow-visible min-h-0 min-w-0">
+                            <div className="bg-white rounded-xl border-2 border-slate-200 p-4 flex flex-col shadow-sm overflow-visible min-h-0">
                                 <h3 className="text-xs font-black uppercase text-slate-500 mb-4 tracking-tighter leading-none">Representação de Incidentes por Origem</h3>
-                                <div className="flex-grow w-full min-h-0 h-full relative">
+                                <div className="flex-grow w-full min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <BarChart data={history} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -748,9 +720,9 @@
                                         </BarChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <div className="flex justify-center gap-8 mt-4 text-[10px] font-bold text-slate-500 uppercase legend-row">
-                                    <div className="legend-item-print"><div className="w-3 h-3 bg-emerald-500 rounded-full inline-block align-middle mr-1"></div> Problemas Internos (%)</div>
-                                    <div className="legend-item-print" style={{marginLeft:'20px'}}><div className="w-3 h-3 bg-red-300 rounded-full inline-block align-middle mr-1"></div> Problemas Externos (%)</div>
+                                <div className="flex justify-center gap-8 mt-4 text-[10px] font-bold text-slate-500 uppercase">
+                                    <div><div className="w-3 h-3 bg-emerald-500 rounded-full inline-block align-middle mr-1"></div> Problemas Internos (%)</div>
+                                    <div style={{marginLeft:'20px'}}><div className="w-3 h-3 bg-red-300 rounded-full inline-block align-middle mr-1"></div> Problemas Externos (%)</div>
                                 </div>
                             </div>
                         </div>
@@ -759,67 +731,55 @@
             };
 
             const renderTabPrincipaisIncidentes = () => {
-                const resumo = data.principaisIncidentes.resumo || INITIAL_DATA.principaisIncidentes.resumo;
-                const history = data.principaisIncidentes.history;
-                
-                const totalTicketsAfetados = resumo.total;
-                const numOfensores = resumo.mapeados;
-                
-                // Filtra grupos em branco e ordena os que foram preenchidos
-                const categoryAggregation = [...resumo.grupos]
-                    .filter(g => g.category && g.category.trim() !== '')
-                    .sort((a, b) => b.quantidade - a.quantidade);
-
+                const princInc = data.principaisIncidentes;
+                const totalTicketsAfetados = princInc.totalVolumeMes;
+                const numOfensores = princInc.totalOfensoresMes;
                 const mediaQuantidade = numOfensores > 0 ? (totalTicketsAfetados / numOfensores).toFixed(0) : 0;
-                const maxOfensorGroup = categoryAggregation[0] || { category: '-', quantidade: 0 };
-                const maxOfensorLabel = `${maxOfensorGroup.category} (${maxOfensorGroup.quantidade})`;
+                
+                const topGruposSorted = [...princInc.topGrupos].filter(g => g.quantidade > 0).sort((a, b) => b.quantidade - a.quantidade);
+                const maxOfensorGroup = topGruposSorted[0] || { category: 'N/A', quantidade: 0 };
+                
+                // Cortando o nome via JS para evitar o truncate do CSS que quebra no html2canvas
+                let maxOfName = maxOfensorGroup.category;
+                if(maxOfName.length > 18) maxOfName = maxOfName.substring(0, 18) + '...';
+                const maxOfensorLabel = `${maxOfName} (${maxOfensorGroup.quantidade})`;
 
-                const paddedHistory = [...history].slice(0, 9);
+                const history = princInc.history;
+                const paddedHistory = [...history];
                 while(paddedHistory.length < 9) {
-                    paddedHistory.push({ id: `empty-${paddedHistory.length}`, incident: '-', category: '-', origin: '-', tickets: 0, duration: '-', impact: 'Baixo' });
+                    paddedHistory.push({ id: `empty-${paddedHistory.length}`, incident: '-', category: '-', origin: '-', tickets: 0, duration: '-', impact: '-' });
                 }
 
                 return (
                     <div className="flex-grow flex flex-col gap-3 pb-0 min-h-0">
                         <div className="grid grid-cols-4 gap-3 shrink-0">
-                            <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
-                                <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-none">Quantidade Total ({latestMonthFullName})</span>
-                                <span className="text-2xl font-black text-slate-800 mt-1 leading-none">{totalTicketsAfetados.toLocaleString()}</span>
+                            <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm py-3 px-2">
+                                <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-tight mb-1">Quantidade Total ({latestMonthFullName})</span>
+                                <span className="text-2xl font-black text-slate-800 leading-tight">{totalTicketsAfetados.toLocaleString()}</span>
                             </div>
-                            <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
-                                <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-none">Ofensores Mapeados</span>
-                                <span className="text-2xl font-black text-indigo-600 mt-1 leading-none">{numOfensores}</span>
+                            <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm py-3 px-2">
+                                <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-tight mb-1">Ofensores Mapeados</span>
+                                <span className="text-2xl font-black text-indigo-600 leading-tight">{numOfensores}</span>
                             </div>
-                            <div className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm">
-                                <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-none">Média de Vol / Ofensor</span>
-                                <span className="text-2xl font-black text-amber-600 mt-1 leading-none">{parseInt(mediaQuantidade).toLocaleString()}</span>
+                            <div className="bg-white rounded-xl border border-slate-200 flex flex-col items-center justify-center text-center shadow-sm py-3 px-2">
+                                <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider leading-tight mb-1">Média de Vol / Ofensor</span>
+                                <span className="text-2xl font-black text-amber-600 leading-tight">{parseInt(mediaQuantidade).toLocaleString()}</span>
                             </div>
-                            <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm">
-                                <span className="text-emerald-600 font-bold uppercase text-[9px] tracking-wider leading-none">Maior Setor Ofensor ({latestMonthFullName})</span>
-                                <span className="text-2xl font-black text-emerald-600 mt-1 leading-none truncate w-full max-w-[240px]" title={maxOfensorLabel}>{maxOfensorLabel}</span>
+                            <div className="bg-emerald-50 rounded-xl border border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm py-3 px-2">
+                                <span className="text-emerald-600 font-bold uppercase text-[9px] tracking-wider leading-tight mb-1">Maior Setor Ofensor ({latestMonthFullName})</span>
+                                <span className="text-xl font-black text-emerald-600" style={{ lineHeight: '1.4', paddingBottom: '2px' }}>{maxOfensorLabel}</span>
                             </div>
                         </div>
 
                         <div className="flex-grow grid grid-cols-5 gap-3 min-h-0">
                             <div className="col-span-2 bg-white rounded-xl border border-slate-200 p-3 flex flex-col shadow-sm">
                                 <h3 className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-wider">Top Ofensores Consolidados: Soma de Quantidade por Grupo</h3>
-                                <div className="flex-grow w-full min-h-0">
+                                <div className="flex-grow w-full relative min-h-0">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart 
-                                            data={categoryAggregation} 
-                                            layout="vertical" 
-                                            margin={{ top: 5, right: 35, left: 10, bottom: 5 }}
-                                        >
+                                        <BarChart data={topGruposSorted} layout="vertical" margin={{ top: 5, right: 35, left: 10, bottom: 5 }}>
                                             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                                             <XAxis type="number" hide />
-                                            <YAxis 
-                                                dataKey="category" 
-                                                type="category" 
-                                                axisLine={false} 
-                                                tickLine={false} 
-                                                tick={{fontSize: 10, fill: '#64748b', fontWeight: 700}}
-                                                width={90}
-                                            />
+                                            <YAxis dataKey="category" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#64748b', fontWeight: 700}} width={90} />
                                             <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} />
                                             <Bar dataKey="quantidade" name="Quantidade Total" fill={BRAND_GREEN} radius={[0, 4, 4, 0]} isAnimationActive={false}>
                                                 <LabelList dataKey="quantidade" position="right" style={{ fontSize: '10px', fill: '#475569', fontWeight: 900 }} />
@@ -831,43 +791,93 @@
 
                             <div className="col-span-3 bg-white rounded-xl border border-slate-200 py-2 px-3 flex flex-col shadow-sm overflow-hidden">
                                 <h3 className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider shrink-0">Detalhamento Individual de Crises em {latestMonthFullName}</h3>
-                                <div className="flex-grow flex flex-col justify-between overflow-hidden">
+                                <div className="flex-grow flex flex-col overflow-hidden">
                                     <table className="w-full text-left border-collapse h-full">
                                         <thead>
                                             <tr className="border-b border-slate-200">
-                                                <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider w-[65%]">Incidente</th>
-                                                <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Quantidade Total</th>
-                                                <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Duração</th>
-                                                <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Impacto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {paddedHistory.map((item, idx) => {
-                                            const totalQty = (item.chat || 0) + (item.ticket || 0) + (item.tickets || 0);
-                                            const isEmpty = item.incident === '-';
-                                            return (
-                                                <tr key={`inc-${idx}`} className="border-b border-slate-100 last:border-b-0">
-                                                    <td className="py-1 px-2">
-                                                        <div className="font-bold text-slate-700 text-sm leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[420px]" title={item.incident}>{item.incident}</div>
-                                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                                            {!isEmpty && <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md inline-block">{item.category}</span>}
-                                                            {!isEmpty && item.origin && item.origin !== '-' && (
-                                                                <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md inline-block border ${item.origin === 'Interno' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-500 border-red-200'}`}>
-                                                                    {item.origin}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-1 px-2 text-center text-sm font-black text-slate-800">{!isEmpty ? totalQty.toLocaleString() : '-'}</td>
-                                                    <td className="py-1 px-2 text-center text-xs font-bold text-slate-500">{item.duration}</td>
-                                                    <td className="py-1 px-2 text-center">
+                                                <th className="py-0.5 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider w-[65%]">Incidente</th>
+                                                <th className="py-0.5 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Quantidade Total</th>
+                                                <th className="py-0.5 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Duração</th>
+                                                <th className="py-0.5 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Impacto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {paddedHistory.map((item, idx) => {
+                                                const isEmpty = item.incident === '-';
+                                                
+                                                // Javascript faz o corte para proteger a renderização da imagem
+                                                const displayName = item.incident.length > 55 ? item.incident.substring(0, 55) + '...' : item.incident;
+
+                                                return (
+                                                    <tr key={`inc-${idx}`} className="border-b border-slate-100 last:border-b-0">
+                                                        <td className="py-0.5 px-2 align-middle">
+                                                            <div className="font-bold text-slate-700 text-[12px] leading-tight block mb-[2px]" title={item.incident}>
+                                                                {displayName}
+                                                            </div>
+                                                            <div style={{ display: 'block' }}>
+                                                                {!isEmpty && (
+                                                                    <span style={{ 
+                                                                        display: 'inline-block', 
+                                                                        verticalAlign: 'middle',
+                                                                        height: '16px', 
+                                                                        lineHeight: '14px',
+                                                                        boxSizing: 'border-box',
+                                                                        fontSize: '7.5px', 
+                                                                        fontWeight: '900', 
+                                                                        textTransform: 'uppercase', 
+                                                                        letterSpacing: '0.05em',
+                                                                        color: '#94a3b8', 
+                                                                        backgroundColor: '#f1f5f9', 
+                                                                        padding: '0 4px', 
+                                                                        borderRadius: '2px', 
+                                                                        border: '1px solid transparent',
+                                                                        marginRight: '6px'
+                                                                    }}>
+                                                                        {item.category}
+                                                                    </span>
+                                                                )}
+                                                                
+                                                                {!isEmpty && item.origin && item.origin !== '-' && (
+                                                                    <span style={{ 
+                                                                        display: 'inline-block', 
+                                                                        verticalAlign: 'middle',
+                                                                        height: '16px', 
+                                                                        lineHeight: '14px',
+                                                                        boxSizing: 'border-box',
+                                                                        fontSize: '7.5px', 
+                                                                        fontWeight: '900', 
+                                                                        textTransform: 'uppercase', 
+                                                                        letterSpacing: '0.05em',
+                                                                        padding: '0 4px', 
+                                                                        borderRadius: '2px', 
+                                                                        border: '1px solid', 
+                                                                        color: item.origin === 'Interno' ? '#059669' : '#ef4444', 
+                                                                        backgroundColor: item.origin === 'Interno' ? '#ecfdf5' : '#fef2f2', 
+                                                                        borderColor: item.origin === 'Interno' ? '#a7f3d0' : '#fecaca'
+                                                                    }}>
+                                                                        {item.origin}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-0.5 px-2 text-center align-middle text-[12px] font-black text-slate-800">{!isEmpty ? item.tickets.toLocaleString() : '-'}</td>
+                                                        <td className="py-0.5 px-2 text-center align-middle text-[11px] font-bold text-slate-500 whitespace-nowrap">{item.duration}</td>
+                                                        <td className="py-0.5 px-2 text-center align-middle">
                                                             {!isEmpty && (
-                                                                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full inline-block ${
-                                                                    item.impact === 'Crítico' ? 'bg-red-100 text-red-700' :
-                                                                    item.impact === 'Urgente' ? 'bg-orange-100 text-orange-700' :
-                                                                    item.impact === 'Normal' ? 'bg-blue-50 text-blue-600' :
-                                                                    'bg-slate-100 text-slate-600'
-                                                                }`}>
+                                                                <span style={{ 
+                                                                    display: 'inline-block',
+                                                                    verticalAlign: 'middle',
+                                                                    height: '18px',
+                                                                    lineHeight: '18px',
+                                                                    boxSizing: 'border-box',
+                                                                    fontSize: '8px',
+                                                                    fontWeight: '900',
+                                                                    textTransform: 'uppercase',
+                                                                    padding: '0 8px',
+                                                                    borderRadius: '99px',
+                                                                    backgroundColor: item.impact === 'Crítico' ? '#fee2e2' : item.impact === 'Urgente' ? '#ffedd5' : item.impact === 'Normal' ? '#eff6ff' : '#f1f5f9', 
+                                                                    color: item.impact === 'Crítico' ? '#b91c1c' : item.impact === 'Urgente' ? '#c2410c' : item.impact === 'Normal' ? '#2563eb' : '#475569'
+                                                                }}>
                                                                     {item.impact}
                                                                 </span>
                                                             )}
@@ -880,7 +890,6 @@
                                     </table>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 );
@@ -923,7 +932,6 @@
                             >
                                 <DownloadIcon size={16} /> {isExporting ? 'Renderizando...' : 'Exportar para Slide'}
                             </button>
-                            <button onClick={() => setIsExportCodeModalOpen(true)} className="flex items-center gap-2 bg-indigo-600 px-6 py-2.5 rounded-xl text-white hover:bg-indigo-800 font-black text-xs shadow-md transition-colors tracking-widest uppercase"><CodeIcon size={16} /> Exportar HTML</button>
                             <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-slate-900 px-6 py-2.5 rounded-xl text-white hover:bg-black font-black text-xs shadow-md transition-colors tracking-widest uppercase"><DatabaseIcon size={16} /> Editar Dados</button>
                         </div>
                     </div>
@@ -1174,135 +1182,102 @@
                                         );
                                     })() : null}
 
-                                    {/* Editor para Principais Incidentes (Nova Estrutura Desacoplada) */}
+                                    {/* Editor para Principais Incidentes */}
                                     {activeTab === 'principais_incidentes' ? (
-                                        <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
-                                            {/* Resumo Consolidado (Macro) */}
-                                            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
-                                                <h3 className="font-black text-slate-700 uppercase mb-4 text-[11px] tracking-widest text-center border-b border-slate-200 pb-2">Dados Consolidados (Cards e Gráfico Verde)</h3>
-                                                
+                                        <div className="flex flex-col gap-6 max-w-5xl mx-auto">
+                                            {/* Dados Consolidados */}
+                                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase border-b pb-2">Dados Consolidados (Cards e Gráfico Verde)</h4>
                                                 <div className="grid grid-cols-2 gap-4 mb-4">
-                                                    <div className="bg-white p-3 rounded-lg border border-slate-200">
-                                                        <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Volume Total no Mês</label>
-                                                        <input type="number" value={data.principaisIncidentes.resumo?.total} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.resumo.total = parseInt(e.target.value) || 0;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold" />
+                                                    <div>
+                                                        <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Volume Total no Mês</label>
+                                                        <input type="number" value={data.principaisIncidentes.totalVolumeMes} onChange={(e) => {
+                                                            const newData = {...data}; newData.principaisIncidentes.totalVolumeMes = parseInt(e.target.value) || 0; setData(newData);
+                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
                                                     </div>
-                                                    <div className="bg-white p-3 rounded-lg border border-slate-200">
-                                                        <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Ofensores Mapeados</label>
-                                                        <input type="number" value={data.principaisIncidentes.resumo?.mapeados} onChange={(e) => {
-                                                            const newData = {...data};
-                                                            newData.principaisIncidentes.resumo.mapeados = parseInt(e.target.value) || 0;
-                                                            setData(newData);
-                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold" />
+                                                    <div>
+                                                        <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1">Ofensores Mapeados</label>
+                                                        <input type="number" value={data.principaisIncidentes.totalOfensoresMes} onChange={(e) => {
+                                                            const newData = {...data}; newData.principaisIncidentes.totalOfensoresMes = parseInt(e.target.value) || 0; setData(newData);
+                                                        }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-800" />
                                                     </div>
                                                 </div>
-
-                                                <label className="block text-[10px] uppercase font-bold text-slate-500 mb-2 mt-4">Top Grupos Ofensores (Aparecem no Gráfico de Barras)</label>
+                                                <h5 className="font-bold text-slate-600 mb-2 text-[11px] uppercase">Top Grupos Ofensores (Aparecem no Gráfico de Barras)</h5>
                                                 <div className="grid grid-cols-5 gap-3">
-                                                    {[0, 1, 2, 3, 4].map(idx => (
-                                                        <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200">
-                                                            <span className="block text-[9px] font-black text-slate-300 mb-2 text-right">#{idx+1}</span>
-                                                            <input type="text" placeholder="Nome do Grupo" value={data.principaisIncidentes.resumo?.grupos[idx]?.category || ''} onChange={(e) => {
-                                                                const newData = {...data};
-                                                                if(!newData.principaisIncidentes.resumo.grupos[idx]) newData.principaisIncidentes.resumo.grupos[idx] = {category:'', quantidade:0};
-                                                                newData.principaisIncidentes.resumo.grupos[idx].category = e.target.value;
-                                                                setData(newData);
-                                                            }} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs mb-2 font-semibold" />
-                                                            <input type="number" placeholder="Quantidade" value={data.principaisIncidentes.resumo?.grupos[idx]?.quantidade || ''} onChange={(e) => {
-                                                                const newData = {...data};
-                                                                if(!newData.principaisIncidentes.resumo.grupos[idx]) newData.principaisIncidentes.resumo.grupos[idx] = {category:'', quantidade:0};
-                                                                newData.principaisIncidentes.resumo.grupos[idx].quantidade = parseInt(e.target.value) || 0;
-                                                                setData(newData);
-                                                            }} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs font-bold" />
+                                                    {data.principaisIncidentes.topGrupos.map((grupo, idx) => (
+                                                        <div key={`grupo-${idx}`} className="bg-white p-2 rounded border border-slate-200">
+                                                            <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Grupo #{idx+1}</label>
+                                                            <input type="text" value={grupo.category} onChange={(e) => {
+                                                                const newData = {...data}; newData.principaisIncidentes.topGrupos[idx].category = e.target.value; setData(newData);
+                                                            }} className="w-full px-2 py-1 border border-slate-300 rounded text-xs mb-2" placeholder="Nome" />
+                                                            <input type="number" value={grupo.quantidade} onChange={(e) => {
+                                                                const newData = {...data}; newData.principaisIncidentes.topGrupos[idx].quantidade = parseInt(e.target.value) || 0; setData(newData);
+                                                            }} className="w-full px-2 py-1 border border-slate-300 rounded text-xs" placeholder="Qtd" />
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
 
-                                            {/* Lista de Detalhamento Individual (Os 9 da Tabela) */}
-                                            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
-                                                <h3 className="font-black text-slate-700 uppercase mb-4 text-[11px] tracking-widest text-center border-b border-slate-200 pb-2">Detalhamento Individual (Aparecem na Tabela de 9 Linhas)</h3>
-                                                <div className="grid grid-cols-1 gap-3">
-                                                    {(() => {
-                                                        const history = [...data.principaisIncidentes.history].slice(0, 9);
-                                                        while(history.length < 9) {
-                                                            history.push({ id: `temp-${history.length}`, incident: '', category: '', origin: '-', tickets: 0, duration: '', impact: 'Baixo' });
-                                                        }
-                                                        return history.map((item, idx) => (
-                                                            <div key={item.id} className="p-4 bg-white rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center text-slate-800 font-bold">
-                                                                <div className="col-span-3">
-                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Incidente</label>
-                                                                    <input type="text" value={item.incident} onChange={(e) => {
-                                                                        const newData = {...data};
-                                                                        if(!newData.principaisIncidentes.history[idx]) {
-                                                                            newData.principaisIncidentes.history.push({id: `inc-${Date.now()}`, incident:'', category:'', origin: '-', tickets:0, duration:'', impact:'Baixo'});
-                                                                        }
-                                                                        newData.principaisIncidentes.history[idx].incident = e.target.value;
-                                                                        setData(newData);
-                                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Categoria</label>
-                                                                    <input type="text" value={item.category} onChange={(e) => {
-                                                                        const newData = {...data};
-                                                                        newData.principaisIncidentes.history[idx].category = e.target.value;
-                                                                        setData(newData);
-                                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Origem</label>
-                                                                    <select value={item.origin || '-'} onChange={(e) => {
-                                                                        const newData = {...data};
-                                                                        newData.principaisIncidentes.history[idx].origin = e.target.value;
-                                                                        setData(newData);
-                                                                    }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs">
-                                                                        <option value="-">-</option>
-                                                                        <option value="Interno">Interno</option>
-                                                                        <option value="Externo">Externo</option>
-                                                                    </select>
-                                                                </div>
-                                                                <div className="col-span-1">
-                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Qtd</label>
-                                                                    <input type="number" value={item.tickets} onChange={(e) => {
-                                                                        const newData = {...data};
-                                                                        newData.principaisIncidentes.history[idx].tickets = parseInt(e.target.value) || 0;
-                                                                        setData(newData);
-                                                                    }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs text-center" />
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Duração</label>
-                                                                    <input type="text" value={item.duration} onChange={(e) => {
-                                                                        const newData = {...data};
-                                                                        newData.principaisIncidentes.history[idx].duration = e.target.value;
-                                                                        setData(newData);
-                                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Impacto</label>
-                                                                    <select value={item.impact} onChange={(e) => {
-                                                                        const newData = {...data};
-                                                                        newData.principaisIncidentes.history[idx].impact = e.target.value;
-                                                                        setData(newData);
-                                                                    }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs">
-                                                                        <option value="Crítico">Crítico</option>
-                                                                        <option value="Urgente">Urgente</option>
-                                                                        <option value="Normal">Normal</option>
-                                                                        <option value="Baixo">Baixo</option>
-                                                                    </select>
-                                                                </div>
+                                            {/* Detalhamento Individual */}
+                                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                                <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase border-b pb-2">Detalhamento Individual (Tabela de 9 Linhas)</h4>
+                                                <div className="flex flex-col gap-3">
+                                                    {data.principaisIncidentes.history.map((item, idx) => (
+                                                        <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-white p-2 border border-slate-200 rounded">
+                                                            <div className="col-span-4">
+                                                                <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Incidente</label>
+                                                                <input type="text" value={item.incident} onChange={(e) => {
+                                                                    const newData = {...data}; newData.principaisIncidentes.history[idx].incident = e.target.value; setData(newData);
+                                                                }} className="w-full px-2 py-1 border border-slate-300 rounded text-xs" />
                                                             </div>
-                                                        ));
-                                                    })()}
+                                                            <div className="col-span-2">
+                                                                <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Categoria</label>
+                                                                <input type="text" value={item.category} onChange={(e) => {
+                                                                    const newData = {...data}; newData.principaisIncidentes.history[idx].category = e.target.value; setData(newData);
+                                                                }} className="w-full px-2 py-1 border border-slate-300 rounded text-xs" />
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Origem</label>
+                                                                <select value={item.origin} onChange={(e) => {
+                                                                    const newData = {...data}; newData.principaisIncidentes.history[idx].origin = e.target.value; setData(newData);
+                                                                }} className="w-full px-2 py-1 border border-slate-300 rounded text-xs bg-white">
+                                                                    <option value="Interno">Interno</option>
+                                                                    <option value="Externo">Externo</option>
+                                                                    <option value="-">-</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="col-span-1">
+                                                                <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Qtd</label>
+                                                                <input type="number" value={item.tickets} onChange={(e) => {
+                                                                    const newData = {...data}; newData.principaisIncidentes.history[idx].tickets = parseInt(e.target.value) || 0; setData(newData);
+                                                                }} className="w-full px-2 py-1 border border-slate-300 rounded text-xs text-center" />
+                                                            </div>
+                                                            <div className="col-span-1">
+                                                                <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Duração</label>
+                                                                <input type="text" value={item.duration} onChange={(e) => {
+                                                                    const newData = {...data}; newData.principaisIncidentes.history[idx].duration = e.target.value; setData(newData);
+                                                                }} className="w-full px-2 py-1 border border-slate-300 rounded text-xs" />
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Impacto</label>
+                                                                <select value={item.impact} onChange={(e) => {
+                                                                    const newData = {...data}; newData.principaisIncidentes.history[idx].impact = e.target.value; setData(newData);
+                                                                }} className="w-full px-2 py-1 border border-slate-300 rounded text-xs bg-white">
+                                                                    <option value="Crítico">Crítico</option>
+                                                                    <option value="Urgente">Urgente</option>
+                                                                    <option value="Normal">Normal</option>
+                                                                    <option value="Baixo">Baixo</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
                                         </div>
                                     ) : null}
 
                                 </div>
-                                <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl">
+                                <div className="p-5 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 rounded-b-2xl shrink-0">
                                     <button onClick={handleOpenExportModal} className="px-8 py-2.5 rounded-lg text-indigo-700 bg-indigo-100 font-black shadow-sm flex items-center gap-2 hover:bg-indigo-200 uppercase text-xs transition-all"><CodeIcon size={18} /> Exportar HTML</button>
                                     <button onClick={() => setIsEditing(false)} className="px-8 py-2.5 rounded-lg text-slate-600 font-bold hover:bg-slate-200 uppercase text-xs">Cancelar</button>
                                     <button onClick={() => handleSave(data)} className="px-10 py-2.5 text-white rounded-lg font-black shadow-lg flex items-center gap-2 uppercase text-xs transition-all" style={{ backgroundColor: BRAND_GREEN }}><SaveIcon size={18} /> Salvar Tudo</button>
