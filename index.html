@@ -76,7 +76,7 @@
         const BRAND_GREEN = '#34ad61';
         const ACCENT_NAVY = '#1e293b';
         // Chave atualizada para v29 para forçar nova estrutura de dados desacoplada
-        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v29'; 
+        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v30'; 
         const apiKey = "";
 
         const INITIAL_DATA = {
@@ -164,15 +164,15 @@
                     ]
                 },
                 history: [
-                    { id: 1, incident: 'Lentidão no sistema', category: 'Sistema', tickets: 751, duration: '24h 26m', impact: 'Crítico' },
-                    { id: 2, incident: 'Dificuldade na Importação de pedidos de forma automática', category: 'Integrações', tickets: 188, duration: '26h 34m', impact: 'Crítico' },
-                    { id: 3, incident: 'Lentidão no sistema', category: 'Sistema', tickets: 130, duration: '2h 40m', impact: 'Crítico' },
-                    { id: 4, incident: 'Pedidos do Mercado Livre voltando pra "Em aberto" após faturam...', category: 'Integrações', tickets: 122, duration: '112h 31m', impact: 'Urgente' },
-                    { id: 5, incident: 'Comportamento inesperado na configuração do certificado digital', category: 'Certificado Digital', tickets: 101, duration: '27h 07m', impact: 'Urgente' },
-                    { id: 6, incident: 'Lentidão na importação de pedidos', category: 'Integrações', tickets: 92, duration: '19h 44m', impact: 'Urgente' },
-                    { id: 7, incident: 'Dificuldades na utilização da Gestão de anúncios do Mercado Liv...', category: 'Integrações', tickets: 89, duration: '115h 57m', impact: 'Urgente' },
-                    { id: 8, incident: 'Instabilidade Sefaz de MG', category: 'Fiscal', tickets: 83, duration: '21h 19m', impact: 'Normal' },
-                    { id: 9, incident: 'Instabilidade Temporária na Tela de Notas Fiscais', category: 'Fiscal', tickets: 77, duration: '00h 47m', impact: 'Crítico' }
+                    { id: 1, incident: 'Lentidão no sistema', category: 'Sistema', origin: 'Interno', tickets: 751, duration: '24h 26m', impact: 'Crítico' },
+                    { id: 2, incident: 'Dificuldade na Importação de pedidos de forma automática', category: 'Integrações', origin: 'Externo', tickets: 188, duration: '26h 34m', impact: 'Crítico' },
+                    { id: 3, incident: 'Lentidão no sistema', category: 'Sistema', origin: 'Interno', tickets: 130, duration: '2h 40m', impact: 'Crítico' },
+                    { id: 4, incident: 'Pedidos do Mercado Livre voltando pra "Em aberto" após faturam...', category: 'Integrações', origin: 'Externo', tickets: 122, duration: '112h 31m', impact: 'Urgente' },
+                    { id: 5, incident: 'Comportamento inesperado na configuração do certificado digital', category: 'Certificado Digital', origin: 'Externo', tickets: 101, duration: '27h 07m', impact: 'Urgente' },
+                    { id: 6, incident: 'Lentidão na importação de pedidos', category: 'Integrações', origin: 'Externo', tickets: 92, duration: '19h 44m', impact: 'Urgente' },
+                    { id: 7, incident: 'Dificuldades na utilização da Gestão de anúncios do Mercado Liv...', category: 'Integrações', origin: 'Externo', tickets: 89, duration: '115h 57m', impact: 'Urgente' },
+                    { id: 8, incident: 'Instabilidade Sefaz de MG', category: 'Fiscal', origin: 'Externo', tickets: 83, duration: '21h 19m', impact: 'Normal' },
+                    { id: 9, incident: 'Instabilidade Temporária na Tela de Notas Fiscais', category: 'Fiscal', origin: 'Interno', tickets: 77, duration: '00h 47m', impact: 'Crítico' }
                 ]
             }
         };
@@ -270,7 +270,7 @@
                     dataContext = data.incidentes.history.map(h => `- ${h.month}: Incidentes ${h.incidentes}, Tickets ${h.tickets}, Repres. ${h.representatividade}%`).join('\n');
                     labelType = "gestão de incidentes críticos";
                 } else {
-                    dataContext = data.principaisIncidentes.history.map(h => `- ${h.incident}: Quantidade ${h.tickets}, Duração ${h.duration}, Impacto ${h.impact}`).join('\n');
+                    dataContext = data.principaisIncidentes.history.map(h => `- ${h.incident} (Origem: ${h.origin || 'N/A'}): Quantidade ${h.tickets}, Duração ${h.duration}, Impacto ${h.impact}`).join('\n');
                     labelType = "principais ofensores operacionais de incidentes";
                 }
 
@@ -776,7 +776,7 @@
 
                 const paddedHistory = [...history].slice(0, 9);
                 while(paddedHistory.length < 9) {
-                    paddedHistory.push({ id: `empty-${paddedHistory.length}`, incident: '-', category: '-', tickets: 0, duration: '-', impact: 'Baixo' });
+                    paddedHistory.push({ id: `empty-${paddedHistory.length}`, incident: '-', category: '-', origin: '-', tickets: 0, duration: '-', impact: 'Baixo' });
                 }
 
                 return (
@@ -839,21 +839,28 @@
                                                 <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Quantidade Total</th>
                                                 <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Duração</th>
                                                 <th className="py-1 px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider text-center">Impacto</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {paddedHistory.map((item, idx) => {
-                                                const totalQty = (item.chat || 0) + (item.ticket || 0) + (item.tickets || 0);
-                                                const isEmpty = item.incident === '-';
-                                                return (
-                                                    <tr key={`inc-${idx}`} className="border-b border-slate-100 last:border-b-0">
-                                                        <td className="py-1 px-2">
-                                                            <div className="font-bold text-slate-700 text-sm leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[420px]" title={item.incident}>{item.incident}</div>
-                                                            {!isEmpty && <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md inline-block mt-0.5">{item.category}</span>}
-                                                        </td>
-                                                        <td className="py-1 px-2 text-center text-sm font-black text-slate-800">{!isEmpty ? totalQty.toLocaleString() : '-'}</td>
-                                                        <td className="py-1 px-2 text-center text-xs font-bold text-slate-500">{item.duration}</td>
-                                                        <td className="py-1 px-2 text-center">
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {paddedHistory.map((item, idx) => {
+                                            const totalQty = (item.chat || 0) + (item.ticket || 0) + (item.tickets || 0);
+                                            const isEmpty = item.incident === '-';
+                                            return (
+                                                <tr key={`inc-${idx}`} className="border-b border-slate-100 last:border-b-0">
+                                                    <td className="py-1 px-2">
+                                                        <div className="font-bold text-slate-700 text-sm leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[420px]" title={item.incident}>{item.incident}</div>
+                                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                                            {!isEmpty && <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md inline-block">{item.category}</span>}
+                                                            {!isEmpty && item.origin && item.origin !== '-' && (
+                                                                <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md inline-block border ${item.origin === 'Interno' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-500 border-red-200'}`}>
+                                                                    {item.origin}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-1 px-2 text-center text-sm font-black text-slate-800">{!isEmpty ? totalQty.toLocaleString() : '-'}</td>
+                                                    <td className="py-1 px-2 text-center text-xs font-bold text-slate-500">{item.duration}</td>
+                                                    <td className="py-1 px-2 text-center">
                                                             {!isEmpty && (
                                                                 <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full inline-block ${
                                                                     item.impact === 'Crítico' ? 'bg-red-100 text-red-700' :
@@ -1222,31 +1229,43 @@
                                                     {(() => {
                                                         const history = [...data.principaisIncidentes.history].slice(0, 9);
                                                         while(history.length < 9) {
-                                                            history.push({ id: `temp-${history.length}`, incident: '', category: '', tickets: 0, duration: '', impact: 'Baixo' });
+                                                            history.push({ id: `temp-${history.length}`, incident: '', category: '', origin: '-', tickets: 0, duration: '', impact: 'Baixo' });
                                                         }
                                                         return history.map((item, idx) => (
                                                             <div key={item.id} className="p-4 bg-white rounded-xl border border-slate-200 grid grid-cols-12 gap-3 items-center text-slate-800 font-bold">
-                                                                <div className="col-span-5">
+                                                                <div className="col-span-3">
                                                                     <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Incidente</label>
                                                                     <input type="text" value={item.incident} onChange={(e) => {
                                                                         const newData = {...data};
                                                                         if(!newData.principaisIncidentes.history[idx]) {
-                                                                            newData.principaisIncidentes.history.push({id: `inc-${Date.now()}`, incident:'', category:'', tickets:0, duration:'', impact:'Baixo'});
+                                                                            newData.principaisIncidentes.history.push({id: `inc-${Date.now()}`, incident:'', category:'', origin: '-', tickets:0, duration:'', impact:'Baixo'});
                                                                         }
                                                                         newData.principaisIncidentes.history[idx].incident = e.target.value;
                                                                         setData(newData);
                                                                     }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
                                                                 </div>
                                                                 <div className="col-span-2">
-                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Categoria (Setor)</label>
+                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Categoria</label>
                                                                     <input type="text" value={item.category} onChange={(e) => {
                                                                         const newData = {...data};
                                                                         newData.principaisIncidentes.history[idx].category = e.target.value;
                                                                         setData(newData);
                                                                     }} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs" />
                                                                 </div>
+                                                                <div className="col-span-2">
+                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Origem</label>
+                                                                    <select value={item.origin || '-'} onChange={(e) => {
+                                                                        const newData = {...data};
+                                                                        newData.principaisIncidentes.history[idx].origin = e.target.value;
+                                                                        setData(newData);
+                                                                    }} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs">
+                                                                        <option value="-">-</option>
+                                                                        <option value="Interno">Interno</option>
+                                                                        <option value="Externo">Externo</option>
+                                                                    </select>
+                                                                </div>
                                                                 <div className="col-span-1">
-                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Quantidade</label>
+                                                                    <label className="block text-[9px] uppercase font-bold text-slate-400 mb-1">Qtd</label>
                                                                     <input type="number" value={item.tickets} onChange={(e) => {
                                                                         const newData = {...data};
                                                                         newData.principaisIncidentes.history[idx].tickets = parseInt(e.target.value) || 0;
