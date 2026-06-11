@@ -455,14 +455,14 @@
 
                 return (
                     <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
-                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                        <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden h-[75px]">
                             {top4.map((seg, i) => (
-                                <div key={seg.id} className="flex-1 border-r last:border-0 border-slate-100 py-2.5 text-center no-break">
-                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', textAlign: 'left', marginRight: '12px' }}>
-                                        <div style={{ fontSize: '11px', fontWeight: '900', color: '#64748b', textTransform: 'uppercase', lineHeight: '1' }}>Top {i+1}: {seg.name}</div>
-                                        <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Média do Período</div>
+                                <div key={seg.id} className="flex-1 border-r last:border-0 border-slate-100 flex items-center justify-center no-break px-4">
+                                    <div className="text-left mr-3 flex flex-col justify-center">
+                                        <div className="text-[11px] font-black text-slate-500 uppercase leading-none">Top {i+1}: {seg.name}</div>
+                                        <div className="text-[9px] font-bold text-slate-400 uppercase mt-1.5 leading-none">Média do Período</div>
                                     </div>
-                                    <div style={{ display: 'inline-block', verticalAlign: 'middle', fontSize: '28px', fontWeight: '900', color: colors[seg.id], lineHeight: '1' }}>{seg.history[seg.history.length-1].share}%</div>
+                                    <div className="text-[28px] font-black card-value tracking-tighter" style={{ color: colors[seg.id], lineHeight: '1' }}>{seg.history[seg.history.length-1].share}%</div>
                                 </div>
                             ))}
                         </div>
