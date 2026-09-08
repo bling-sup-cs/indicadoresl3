@@ -16,9 +16,9 @@
     <!-- Importação da Fonte Roboto para consistência com a apresentação -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Roboto', sans-serif; background-color: #cbd5e1; margin: 0; }
+        body { font-family: 'Roboto', sans-serif; background-color: #f4f4f4; margin: 0; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
-        #print-area { backface-visibility: hidden; -webkit-font-smoothing: antialiased; background-color: #f8fafc; font-family: 'Roboto', sans-serif; width: 1280px; height: 720px; }
+        #print-area { backface-visibility: hidden; -webkit-font-smoothing: antialiased; background-color: #f4f4f4; font-family: 'Roboto', sans-serif; width: 1280px; height: 720px; }
         .no-break { white-space: nowrap !important; }
         @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
@@ -30,24 +30,25 @@
 
     <script id="app-code" type="text/babel">
 
-
-
         // --- ÍCONES SVG ---
         const DatabaseIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5V19A9 3 0 0 0 21 19V5"></path><path d="M3 12A9 3 0 0 0 21 12"></path></svg>);
         const PlusCircleIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>);
         const XIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>);
         const SaveIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>);
-        const DownloadIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>);
+        const DownloadIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>);
         const SparklesIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path></svg>);
         const CodeIcon = ({size=16, color="currentColor"}) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>);
 
         // --- COMPONENTES RECHARTS ---
         const { Tooltip, ResponsiveContainer, ComposedChart, BarChart, LineChart, CartesianGrid, Legend, Bar, Line, YAxis, Cell, XAxis, LabelList, AreaChart, Area } = window.Recharts;
 
-        const BRAND_GREEN = '#34ad61';
+        // CORES ATUALIZADAS BLING
+        const BRAND_GREEN = '#93d574';
+        const BRAND_TITLE = '#40615e';
         const ACCENT_NAVY = '#1e293b';
-        // Atualizado para v34 para garantir a limpeza do cache e aplicação do layout block
-        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v34'; 
+        
+        // Atualizado para v36 para garantir a limpeza do cache e aplicação do layout
+        const LOCAL_STORAGE_KEY = 'dashboard_atendimento_dados_v36'; 
         const apiKey = "";
 
         const INITIAL_DATA = {
@@ -55,7 +56,7 @@
                     {
                               "id": "fiscal",
                               "name": "Fiscal",
-                              "color": "#34ad61",
+                              "color": "#93d574",
                               "history": [
                                         {
                                                   "month": "Fev",
@@ -703,7 +704,7 @@
                               }
                     ]
           }
-};
+        };
 
         const App = () => {
             const [data, setData] = React.useState(() => {
@@ -821,7 +822,7 @@
                 window.scrollTo(0,0);
                 setTimeout(async () => {
                     try {
-                        const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: '#f8fafc', width: 1280, height: 720 });
+                        const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: '#f4f4f4', width: 1280, height: 720 });
                         const link = document.createElement('a');
                         link.download = `dashboard-${activeTab}.png`;
                         link.href = canvas.toDataURL("image/png", 1.0);
@@ -878,9 +879,9 @@
     <!-- Importação da Fonte Roboto para consistência com a apresentação -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Roboto', sans-serif; background-color: #cbd5e1; margin: 0; }
+        body { font-family: 'Roboto', sans-serif; background-color: #f4f4f4; margin: 0; }
         ::-webkit-scrollbar { width: 0px; background: transparent; }
-        #print-area { backface-visibility: hidden; -webkit-font-smoothing: antialiased; background-color: #f8fafc; font-family: 'Roboto', sans-serif; width: 1280px; height: 720px; }
+        #print-area { backface-visibility: hidden; -webkit-font-smoothing: antialiased; background-color: #f4f4f4; font-family: 'Roboto', sans-serif; width: 1280px; height: 720px; }
         .no-break { white-space: nowrap !important; }
         @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
@@ -965,7 +966,7 @@
                     return entry;
                 });
                 
-                const colors = { fiscal: '#34ad61', integracoes: '#3b82f6', minhaconta: '#f59e0b', erp: '#ef4444', financas: '#8b5cf6', sistema: '#0ea5e9', conta: '#14b8a6', api: '#f97316' };
+                const colors = { fiscal: BRAND_GREEN, integracoes: '#3b82f6', minhaconta: '#f59e0b', erp: '#ef4444', financas: '#8b5cf6', sistema: '#0ea5e9', conta: '#14b8a6', api: '#f97316' };
                 const sortedSegments = [...data.segmentos].sort((a, b) => b.history[b.history.length-1].share - a.history[a.history.length-1].share);
                 const top4 = sortedSegments.slice(0, 4);
                 const visibleSegments = data.segmentos.filter(seg => !hiddenSegments.includes(seg.id));
@@ -974,13 +975,11 @@
 
                 return (
                     <div className="flex-grow flex flex-col gap-2 pb-0 min-h-0">
-                        {/* Ajuste de min-h e py-1 para evitar o corte dos números */}
                         <div className="flex shrink-0 bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden min-h-[75px] py-1">
                             {top4.map((seg, i) => (
                                 <div key={seg.id} className="flex-1 border-r last:border-0 border-slate-100 flex flex-col justify-center items-center text-center px-2">
                                     <div className="text-[11px] font-black text-slate-500 uppercase leading-tight mb-0.5">Top {i+1}: {seg.name}</div>
                                     <div className="text-[9px] font-bold text-slate-400 uppercase leading-tight mb-1">Média do Período</div>
-                                    {/* Removido o leading-none, reduzido para text-2xl e adicionado lineHeight 1.2 */}
                                     <div className="text-2xl font-black" style={{ color: colors[seg.id], lineHeight: '1.2' }}>{seg.history[seg.history.length-1].share}%</div>
                                 </div>
                             ))}
@@ -1015,7 +1014,6 @@
 
                                                     return (
                                                         <g>
-                                                            {/* Fonte reduzida para 10px e strokeWidth para 4 para evitar atropelamentos */}
                                                             <text x={x} y={y} dy={dy} fill="none" fontSize="10" fontWeight="800" textAnchor={anchor} stroke="#ffffff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">{value}%</text>
                                                             <text x={x} y={y} dy={dy} fill={colors[seg.id]} fontSize="10" fontWeight="800" textAnchor={anchor}>{value}%</text>
                                                         </g>
@@ -1039,6 +1037,7 @@
                     </div>
                 );
             };
+
             const renderTabNiveis = () => {
                 const levels = [{ id: 'l1', label: 'Nível L1', color: BRAND_GREEN }, { id: 'l2', label: 'Nível L2', color: '#3b82f6' }, { id: 'l3', label: 'Nível L3', color: '#f59e0b' }, { id: 'l4', label: 'Nível L4', color: '#ef4444' }];
                 const history = data.niveis.history;
@@ -1176,7 +1175,7 @@
                             </div>
                             <div className="bg-emerald-50 rounded-2xl border-2 border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm h-full">
                                 <span className="text-emerald-600 font-bold uppercase text-xs tracking-widest mb-2 leading-none">Taxa de Contato ({latestMonthName})</span>
-                                <span className="text-5xl font-black text-emerald-600 leading-none">{Number(current.contactRate).toFixed(2).replace('.', ',')}%</span>
+                                <span className="text-5xl font-black leading-none" style={{ color: BRAND_GREEN }}>{Number(current.contactRate).toFixed(2).replace('.', ',')}%</span>
                             </div>
                         </div>
                         <div className="flex-grow grid grid-cols-2 gap-6 min-h-0">
@@ -1184,7 +1183,7 @@
                                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-2 text-center leading-none">Clientes ativos e Atendimentos</h3>
                                 <div className="flex justify-center gap-6 mb-4 text-[10px] font-bold text-slate-500 uppercase">
                                     <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-400 rounded-sm"></div> Clientes ativos</div>
-                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-sm"></div> Atendimentos</div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm" style={{ backgroundColor: BRAND_GREEN }}></div> Atendimentos</div>
                                 </div>
                                 <div className="flex-grow w-full min-h-0"><ResponsiveContainer width="100%" height="100%"><BarChart data={history} margin={{ top: 25, right: 10, left: 10, bottom: 0 }}><XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 11, fill: '#64748b', fontWeight: 700}} dy={10} /><YAxis hide domain={[0, dataMax => dataMax * 1.25]} /><Bar dataKey="clientes" fill="#94a3b8" radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="clientes" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: '#64748b', fontWeight: 700 }} offset={5} /></Bar><Bar dataKey="volume" fill={BRAND_GREEN} radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false}><LabelList dataKey="volume" position="top" formatter={v => v.toLocaleString('pt-BR')} style={{ fontSize: '11px', fill: BRAND_GREEN, fontWeight: 700 }} offset={5} /></Bar></BarChart></ResponsiveContainer></div>
                             </div>
@@ -1263,7 +1262,7 @@
                                     </ResponsiveContainer>
                                 </div>
                                 <div className="flex justify-center gap-8 mt-4 text-[10px] font-bold text-slate-500 uppercase">
-                                    <div><div className="w-3 h-3 bg-emerald-500 rounded-full inline-block align-middle mr-1"></div> Problemas Internos (%)</div>
+                                    <div><div className="w-3 h-3 rounded-full inline-block align-middle mr-1" style={{ backgroundColor: BRAND_GREEN }}></div> Problemas Internos (%)</div>
                                     <div style={{marginLeft:'20px'}}><div className="w-3 h-3 bg-red-300 rounded-full inline-block align-middle mr-1"></div> Problemas Externos (%)</div>
                                 </div>
                             </div>
@@ -1281,7 +1280,6 @@
                 const topGruposSorted = [...princInc.topGrupos].filter(g => g.quantidade > 0).sort((a, b) => b.quantidade - a.quantidade);
                 const maxOfensorGroup = topGruposSorted[0] || { category: 'N/A', quantidade: 0 };
                 
-                // Cortando o nome via JS para evitar o truncate do CSS que quebra no html2canvas
                 let maxOfName = maxOfensorGroup.category;
                 if(maxOfName.length > 18) maxOfName = maxOfName.substring(0, 18) + '...';
                 const maxOfensorLabel = `${maxOfName} (${maxOfensorGroup.quantidade})`;
@@ -1308,8 +1306,8 @@
                                 <span className="text-2xl font-black text-amber-600 leading-tight">{parseInt(mediaQuantidade).toLocaleString()}</span>
                             </div>
                             <div className="bg-emerald-50 rounded-xl border border-emerald-200 flex flex-col items-center justify-center text-center shadow-sm py-3 px-2">
-                                <span className="text-emerald-600 font-bold uppercase text-[9px] tracking-wider leading-tight mb-1">Maior Setor Ofensor ({latestMonthFullName})</span>
-                                <span className="text-xl font-black text-emerald-600" style={{ lineHeight: '1.4', paddingBottom: '2px' }}>{maxOfensorLabel}</span>
+                                <span className="font-bold uppercase text-[9px] tracking-wider leading-tight mb-1" style={{ color: BRAND_GREEN }}>Maior Setor Ofensor ({latestMonthFullName})</span>
+                                <span className="text-xl font-black" style={{ color: BRAND_GREEN, lineHeight: '1.4', paddingBottom: '2px' }}>{maxOfensorLabel}</span>
                             </div>
                         </div>
 
@@ -1438,7 +1436,7 @@
             };
 
             return (
-                <div className="flex flex-col items-center justify-center min-h-screen bg-slate-300 py-6 text-slate-800">
+                <div className="flex flex-col items-center justify-center min-h-screen bg-[#f4f4f4] py-6 text-slate-800">
                     <div className="w-[1280px] flex gap-2 mb-0 shrink-0 px-4">
                         {[
                             { id: 'segmentos', label: 'Segmentos' }, 
@@ -1449,11 +1447,11 @@
                             { id: 'incidentes', label: 'Gestão de Incidentes' },
                             { id: 'principais_incidentes', label: 'Principais Incidentes' }
                         ].map(tab => (
-                            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-4 rounded-t-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-[#f8fafc] text-slate-900 shadow-md border-x-2 border-t-2 border-slate-200 z-10 relative' : 'bg-slate-400 text-slate-200 hover:bg-slate-300 hover:text-slate-700'}`}>{tab.label}</button>
+                            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-4 py-4 rounded-t-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-[#f4f4f4] text-slate-900 shadow-md border-x-2 border-t-2 border-slate-200 z-10 relative' : 'bg-slate-400 text-slate-200 hover:bg-slate-300 hover:text-slate-700'}`}>{tab.label}</button>
                         ))}
                     </div>
 
-                    <div className="w-[1280px] flex justify-between items-center mb-4 px-6 shrink-0 bg-[#f8fafc] py-4 rounded-b-2xl rounded-tr-2xl shadow-md z-0 relative -mt-1 border-t-2 border-slate-100">
+                    <div className="w-[1280px] flex justify-between items-center mb-4 px-6 shrink-0 bg-[#f4f4f4] py-4 rounded-b-2xl rounded-tr-2xl shadow-md z-0 relative -mt-1 border-t-2 border-slate-100">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2 text-slate-600 font-bold text-xs uppercase tracking-widest">
                                 <span className="bg-slate-200 p-2 rounded-full"><DownloadIcon size={14}/></span>
@@ -1480,7 +1478,7 @@
 
                     <div className="w-[1280px] h-[720px] pt-10 px-12 pb-10 font-sans flex flex-col relative shrink-0 overflow-hidden" id="print-area">
                         <div className="flex flex-col shrink-0 border-b-2 border-slate-200 mb-4 pb-2 text-left">
-                            <h1 className="text-2xl font-black tracking-tighter" style={{ color: BRAND_GREEN }}>
+                            <h1 className="text-2xl font-black tracking-tighter" style={{ color: BRAND_TITLE }}>
                                 {activeTab === 'segmentos' ? "Atendimentos por Segmentos" : 
                                  activeTab === 'segmentos_share' ? "Visão Consolidada: Participação de Segmentos" :
                                  activeTab === 'niveis' ? "Distribuição por Nível de Atendimento" :
@@ -1833,8 +1831,6 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-    
-    
     
     </script>
 </body>
